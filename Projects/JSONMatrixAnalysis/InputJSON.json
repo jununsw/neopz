@@ -1,0 +1,46 @@
+{
+    "Nodes":
+    [
+    {
+        "X": [0, 240]
+    },
+    {
+        "X": [240, 240]
+    },
+    {
+        "X": [240, 0]
+    }
+    ],
+    "Materials":
+    [
+    {
+        "E": 29000,
+        "A": 10,
+        "I": 500
+    }
+    ],
+    "Supports":
+    [
+    {
+        "Conditions": [true, true, false],
+        "Node": 0
+    },
+    {
+        "Conditions": [true, false, false],
+        "Node": 2
+    }
+    ],
+    "Elements":
+    [
+    {
+        "Nodes": [0,1],
+        "Hinges": [false, false],
+        "Material": 0
+    },
+    {
+        "Nodes": [1,2],
+        "Hinges": [false, false],
+        "Material": 0
+    }    
+    ]
+}
