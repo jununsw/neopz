@@ -36,6 +36,8 @@ public:
 	// getElements - returns the vector of elements.
 	std::vector<TElement> getElements() const;
     
+    //getSupport - returns a support ID by giving the reference node ID.
+    int getSupportID(int NodeID);
     // getNDOF - returns the number of degrees of freedom of the structure.
     int getNDOF() const;
     // getK - returns the global stiffness matrix.
@@ -49,12 +51,17 @@ public:
 	void setSupports(const std::vector<TSupport>& Supports);
 	// setElements - modifies the vector of elements.
 	void setElements(const std::vector<TElement>& Elements);
+    
 
 private:
 	// Member variables:
+    // fNodes - vector containing the structure nodes.
 	std::vector<TNode> fNodes;
+    // fMaterials - vector containing the available materials.
 	std::vector<TMaterial> fMaterials;
+    // fSupports - vector containing the structure supports.
 	std::vector<TSupport> fSupports;
+    // fElements - vector containing the structure elements.
 	std::vector<TElement> fElements;
 };
 

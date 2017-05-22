@@ -22,11 +22,11 @@
     "Supports":
     [
     {
-        "Conditions": [true, true, false],
+        "Conditions": [true, false, false],
         "Node": 0
     },
     {
-        "Conditions": [true, false, false],
+        "Conditions": [true, true, true],
         "Node": 2
     }
     ],

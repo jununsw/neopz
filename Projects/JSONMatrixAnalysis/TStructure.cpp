@@ -39,6 +39,19 @@ std::vector<TElement> TStructure::getElements() const
 	return fElements;
 }
 
+// getSupport - returns a support ID by giving the reference node ID.
+int TStructure::getSupportID(int NodeID) {
+    int SupportID = -1;
+    for (int i = 0; i < fSupports.size(); i++) {
+        if (fSupports[i].getNodeID() == NodeID)
+        {
+            SupportID = i;
+            break;
+        }
+    }
+    return SupportID;
+}
+
 // getNDOF - returns the number of degrees of freedom of the structure.
 int TStructure::getNDOF() const {
     
@@ -46,10 +59,42 @@ int TStructure::getNDOF() const {
     std::vector<TNode> nodes = this->getNodes();
     std::vector<TSupport> supports = this->getSupports();
     
-    int NDOF;
+    int NDOF = 2*nodes.size();  // Initial number of DOF, considering only vertical and horizontal displacements.
     
-    for (int i = 0; i < nodes.size(); i++) {
-        double asdasasa = 0;
+    bool aux[nodes.size()];     // Auxiliar variable that keeps track if there are already non-hinged elements connected to a certain node.
+    std::fill_n(aux, nodes.size(), false);
+    
+    for (int i = 0; i < elements.size(); i++) {
+        TElement elem = elements[i];
+        int Node1ID = elem.getNode1ID();
+        int Node2ID = elem.getNode2ID();
+        
+        if (elem.getHinge1() == true)
+        {
+            NDOF++;
+        }
+        else
+        {
+            if (aux[Node1ID] == false)
+            {
+                NDOF++;
+                aux[Node1ID] = true;
+            }
+        }
+        
+        if (elem.getHinge2() == true)
+        {
+            NDOF++;
+        }
+        else
+        {
+            if (aux[Node2ID] == false)
+            {
+                NDOF++;
+                aux[Node2ID] = true;
+            }
+        }
+        
     }
     
     return NDOF;
