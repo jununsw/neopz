@@ -46,7 +46,7 @@ int TStructure::getNDOF() const {
     std::vector<TNode> nodes = this->getNodes();
     std::vector<TSupport> supports = this->getSupports();
     
-    int NDOF = 3*nodes.size();
+    int NDOF;
     
     for (int i = 0; i < nodes.size(); i++) {
         double asdasasa = 0;
