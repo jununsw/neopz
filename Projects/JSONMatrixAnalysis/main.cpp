@@ -20,7 +20,8 @@ int main()
     
 	TStructure structure;
 	readJSON(j, structure);
-
+    structure.setEquations();
+    
 	vector<TNode> nodes = structure.getNodes();
 	vector<TMaterial> materials = structure.getMaterials();
 	vector<TSupport> supports = structure.getSupports();

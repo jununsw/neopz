@@ -42,6 +42,7 @@ std::vector<TElement> TStructure::getElements() const
 // getSupport - returns a support ID by giving the reference node ID.
 int TStructure::getSupportID(int NodeID) {
     int SupportID = -1;
+    
     for (int i = 0; i < fSupports.size(); i++) {
         if (fSupports[i].getNodeID() == NodeID)
         {
@@ -55,17 +56,13 @@ int TStructure::getSupportID(int NodeID) {
 // getNDOF - returns the number of degrees of freedom of the structure.
 int TStructure::getNDOF() const {
     
-    std::vector<TElement> elements = this->getElements();
-    std::vector<TNode> nodes = this->getNodes();
-    std::vector<TSupport> supports = this->getSupports();
+    int NDOF = 2*fNodes.size();  // Initial number of DOF, considering only vertical and horizontal displacements.
     
-    int NDOF = 2*nodes.size();  // Initial number of DOF, considering only vertical and horizontal displacements.
+    bool *aux = new bool[fNodes.size()];     // Auxiliar variable that keeps track if there are already non-hinged elements connected to a certain node.
+    std::fill_n(aux, fNodes.size(), false);
     
-    bool aux[nodes.size()];     // Auxiliar variable that keeps track if there are already non-hinged elements connected to a certain node.
-    std::fill_n(aux, nodes.size(), false);
-    
-    for (int i = 0; i < elements.size(); i++) {
-        TElement elem = elements[i];
+    for (int i = 0; i < fElements.size(); i++) {
+        TElement elem = fElements[i];
         int Node1ID = elem.getNode1ID();
         int Node2ID = elem.getNode2ID();
         
@@ -96,8 +93,113 @@ int TStructure::getNDOF() const {
         }
         
     }
-    
+    delete aux;
     return NDOF;
+}
+
+// setEquations - enumerates the equations related to each element.
+void TStructure::setEquations() {
+
+    int DOF = 1;
+    TPZFMatrix<int> equations(fElements.size(), 6, 0);
+    
+    // Enumerate the unknown degrees of freedom.
+    for (int i = 0; i < fElements.size(); i++)
+    {
+        int node1ID = fElements[i].getNode1ID();
+        int node2ID = fElements[i].getNode2ID();
+        // Node 1 enumeration.
+        if (this->getSupportID(node1ID) == -1)
+        {
+            equations(i, 0) = DOF;
+            DOF++;
+            equations(i, 1) = DOF;
+            DOF++;
+            equations(i, 2) = DOF;
+            DOF++;
+        }
+        else
+        {
+            if (fSupports[getSupportID(node1ID)].getFx() != true) {
+                equations(i, 0) = DOF;
+                DOF++;
+            }
+            if (fSupports[getSupportID(node1ID)].getFy() != true) {
+                equations(i, 1) = DOF;
+                DOF++;
+            }
+            if (fSupports[getSupportID(node1ID)].getMx() != true) {
+                equations(i, 2) = DOF;
+                DOF++;
+            }
+        }
+        // Node 2 enumeration.
+        if (this->getSupportID(node2ID) == -1)
+        {
+            equations(i, 3) = DOF;
+            DOF++;
+            equations(i, 4) = DOF;
+            DOF++;
+            equations(i, 5) = DOF;
+            DOF++;
+        }
+        else
+        {
+            if (fSupports[getSupportID(node1ID)].getFx() != true) {
+                equations(i, 3) = DOF;
+                DOF++;
+            }
+            if (fSupports[getSupportID(node1ID)].getFy() != true) {
+                equations(i, 4) = DOF;
+                DOF++;
+            }
+            if (fSupports[getSupportID(node1ID)].getMx() != true) {
+                equations(i, 5) = DOF;
+                DOF++;
+            }
+        }
+        
+    }
+    // Enumerate the restrict degrees of freedom.
+    for (int i = 0; i < fElements.size(); i++)
+    {
+        int node1ID = fElements[i].getNode1ID();
+        int node2ID = fElements[i].getNode2ID();
+        // Node 1 enumeration.
+        if (this->getSupportID(node1ID) != -1)
+        {
+            if (fSupports[getSupportID(node1ID)].getFx() == true) {
+                equations(i, 0) = DOF;
+                DOF++;
+            }
+            if (fSupports[getSupportID(node1ID)].getFy() == true) {
+                equations(i, 1) = DOF;
+                DOF++;
+            }
+            if (fSupports[getSupportID(node1ID)].getMx() == true) {
+                equations(i, 2) = DOF;
+                DOF++;
+            }
+        }
+        // Node 2 enumeration.
+        if (this->getSupportID(node2ID) != -1)
+        {
+            if (fSupports[getSupportID(node1ID)].getFx() == true) {
+                equations(i, 3) = DOF;
+                DOF++;
+            }
+            if (fSupports[getSupportID(node1ID)].getFy() == true) {
+                equations(i, 4) = DOF;
+                DOF++;
+            }
+            if (fSupports[getSupportID(node1ID)].getMx() == true) {
+                equations(i, 5) = DOF;
+                DOF++;
+            }
+        }
+        int localEquations[6] = {equations(i, 0), equations(i, 1), equations(i, 2), equations(i, 3), equations(i, 4), equations(i, 5)};
+        fElements[i].setEquations(localEquations);
+    }
 }
 
 // getK - returns the global stiffness matrix.

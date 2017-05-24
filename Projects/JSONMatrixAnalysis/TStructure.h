@@ -21,7 +21,7 @@ class TStructure {
 public:
 	// Default constructor.
 	TStructure(const std::vector<TNode>& Nodes = {}, const std::vector<TMaterial>& Materials = {},
-		const std::vector<TSupport>& Supports = {}, 	const std::vector<TElement>& Elements = {});
+		const std::vector<TSupport>& Supports = {}, const std::vector<TElement>& Elements = {});
 	// Copy constructor.
 	TStructure(const TStructure& S);
 	// Destructor.
@@ -40,9 +40,11 @@ public:
     int getSupportID(int NodeID);
     // getNDOF - returns the number of degrees of freedom of the structure.
     int getNDOF() const;
+    // setEquations - enumerates the equations related to each element.
+    void setEquations();
     // getK - returns the global stiffness matrix.
     TPZFMatrix<double> getK() const;
-
+    
 	// setNodes - modifies the vector of nodes.
 	void setNodes(const std::vector<TNode>& Nodes);
 	// setMaterials - modifies the vector of materials.

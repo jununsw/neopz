@@ -13,6 +13,12 @@ TElement::TElement(const int& Node1ID, const int& Node2ID, const bool& Hinge1,
     fHinges[1] = Hinge2;
 	fMaterialID = MaterialID;
 	fStructure = Structure;
+    fEquations[0] = -1;
+    fEquations[1] = -1;
+    fEquations[2] = -1;
+    fEquations[3] = -1;
+    fEquations[4] = -1;
+    fEquations[5] = -1;
 }
 
 //Copy constructor.
@@ -23,6 +29,12 @@ TElement::TElement(const TElement& E) {
     fHinges[1] = E.fHinges[1];
     fMaterialID = E.fMaterialID;
     fStructure = E.fStructure;
+    fEquations[0] = E.fEquations[0];
+    fEquations[1] = E.fEquations[1];
+    fEquations[2] = E.fEquations[2];
+    fEquations[3] = E.fEquations[3];
+    fEquations[4] = E.fEquations[4];
+    fEquations[5] = E.fEquations[5];
 }
 
 // Destructor.
@@ -171,8 +183,7 @@ TPZFMatrix<double> TElement::getK() const {
 }
 
 // setLocalNodesIDs - modifies the IDs of the nodes.
-void TElement::setLocalNodesIDs(int* NodesIDs)
-{
+void TElement::setLocalNodesIDs(int* NodesIDs) {
     fLocalNodesIDs[0] = NodesIDs[0];
     fLocalNodesIDs[1] = NodesIDs[1];
 }
@@ -190,6 +201,16 @@ void TElement::setMaterialID(const int& MaterialID) {
     fMaterialID = MaterialID;
 }
 
+// setEquations - modifies the element's equations indexes.
+void TElement::setEquations(int* Equations) {
+    fEquations[0] = Equations[0];
+    fEquations[1] = Equations[1];
+    fEquations[2] = Equations[2];
+    fEquations[3] = Equations[3];
+    fEquations[4] = Equations[4];
+    fEquations[5] = Equations[5];
+}
+
 // Assignment operator.
 TElement& TElement::operator= (const TElement& E) {
     if (this != &E) {
@@ -199,6 +220,12 @@ TElement& TElement::operator= (const TElement& E) {
         fHinges[1] = E.fHinges[1];
         fMaterialID = E.fMaterialID;
         fStructure = E.fStructure;
+        fEquations[0] = E.fEquations[0];
+        fEquations[1] = E.fEquations[1];
+        fEquations[2] = E.fEquations[2];
+        fEquations[3] = E.fEquations[3];
+        fEquations[4] = E.fEquations[4];
+        fEquations[5] = E.fEquations[5];
     }
     return *this;
 }
@@ -213,6 +240,10 @@ void TElement::print() {
 		<< " Material: " << fMaterialID << std::endl
 		<< " L: " << this->getL() << std::endl
 		<< " Cos: " << this->getCos() << std::endl
-		<< " Sin: " << this->getSin() << std::endl;
+		<< " Sin: " << this->getSin() << std::endl
+        << " Equations: (" << fEquations[0] << ", " << fEquations[1]
+        << ", " << fEquations[2] << "; " << fEquations[3]
+        << ", " << fEquations[4] << ", " << fEquations[5] << ")" << std::endl;
+    
     std::cout << std::flush;
 }
