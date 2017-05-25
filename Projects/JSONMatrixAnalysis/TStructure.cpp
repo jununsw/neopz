@@ -58,7 +58,7 @@ int TStructure::getNDOF() const {
     
     int NDOF = 2*fNodes.size();  // Initial number of DOF, considering only vertical and horizontal displacements.
     
-    bool *aux = new bool[fNodes.size()];     // Auxiliar variable that keeps track if there are already non-hinged elements connected to a certain node.
+    bool *aux = new bool[fNodes.size()];     // Auxiliar that keeps track if there are already non-hinged elements connected to a certain node.
     std::fill_n(aux, fNodes.size(), false);
     
     for (int i = 0; i < fElements.size(); i++) {
@@ -66,34 +66,28 @@ int TStructure::getNDOF() const {
         int Node1ID = elem.getNode1ID();
         int Node2ID = elem.getNode2ID();
         
-        if (elem.getHinge1() == true)
-        {
+        if (elem.getHinge1() == true) {     // Checks if the element has a hinge at the first node.
             NDOF++;
         }
-        else
-        {
-            if (aux[Node1ID] == false)
-            {
+        else {  // Element has no hinge at the first node.
+            if (aux[Node1ID] == false) {  // Checks if the element is the first non-hinged element to be connected to the node.
                 NDOF++;
                 aux[Node1ID] = true;
             }
         }
         
-        if (elem.getHinge2() == true)
-        {
+        if (elem.getHinge2() == true) {     // Checks if the element has a hinge at the second node.
             NDOF++;
         }
-        else
-        {
-            if (aux[Node2ID] == false)
-            {
+        else {  // Element has no hinge at the second node.
+            if (aux[Node2ID] == false) {  // Checks if the element is the first non-hinged element to be connected to the node.
                 NDOF++;
                 aux[Node2ID] = true;
             }
         }
         
     }
-    delete aux;
+    delete [] aux;
     return NDOF;
 }
 
@@ -101,102 +95,194 @@ int TStructure::getNDOF() const {
 void TStructure::setEquations() {
 
     int DOF = 1;
-    TPZFMatrix<int> equations(fElements.size(), 6, 0);
+    TPZFMatrix<int> equations(fElements.size(), 6, -1);  // Matrix which stores the equations of each element.
+    TPZFMatrix<int> aux(fNodes.size(), 2, -1); // Auxiliar matrix.
     
-    // Enumerate the unknown degrees of freedom.
+    // Enumerates the unknown degrees of freedom.
     for (int i = 0; i < fElements.size(); i++)
     {
         int node1ID = fElements[i].getNode1ID();
         int node2ID = fElements[i].getNode2ID();
+       
         // Node 1 enumeration.
-        if (this->getSupportID(node1ID) == -1)
+        if (aux(node1ID, 0) == -1) // Checks if it is the first element to be connected to the node.
         {
-            equations(i, 0) = DOF;
-            DOF++;
-            equations(i, 1) = DOF;
-            DOF++;
-            equations(i, 2) = DOF;
-            DOF++;
-        }
-        else
-        {
-            if (fSupports[getSupportID(node1ID)].getFx() != true) {
+            aux(node1ID, 0) = i; // Stores which element is firstly connected.
+            aux(node1ID, 1) = 1; // Stores which node of the element is connected.
+            
+            if (this->getSupportID(node1ID) == -1) // Check if there is any support restricting the node.
+            {
                 equations(i, 0) = DOF;
                 DOF++;
-            }
-            if (fSupports[getSupportID(node1ID)].getFy() != true) {
                 equations(i, 1) = DOF;
                 DOF++;
-            }
-            if (fSupports[getSupportID(node1ID)].getMx() != true) {
                 equations(i, 2) = DOF;
                 DOF++;
             }
-        }
-        // Node 2 enumeration.
-        if (this->getSupportID(node2ID) == -1)
-        {
-            equations(i, 3) = DOF;
-            DOF++;
-            equations(i, 4) = DOF;
-            DOF++;
-            equations(i, 5) = DOF;
-            DOF++;
+            else
+            {
+                if (fSupports[getSupportID(node1ID)].getFx() != true) {
+                    equations(i, 0) = DOF;
+                    DOF++;
+                }
+                if (fSupports[getSupportID(node1ID)].getFy() != true) {
+                    equations(i, 1) = DOF;
+                    DOF++;
+                }
+                if (fSupports[getSupportID(node1ID)].getMx() != true) {
+                    equations(i, 2) = DOF;
+                    DOF++;
+                }
+            }
+
         }
         else
         {
-            if (fSupports[getSupportID(node1ID)].getFx() != true) {
-                equations(i, 3) = DOF;
-                DOF++;
+            if (aux(node1ID, 1) == 1)
+            {
+                equations(i, 0) = equations(aux(node1ID, 0), 0);
+                equations(i, 1) = equations(aux(node1ID, 0), 1);
+                equations(i, 2) = equations(aux(node1ID, 0), 2);
             }
-            if (fSupports[getSupportID(node1ID)].getFy() != true) {
-                equations(i, 4) = DOF;
-                DOF++;
-            }
-            if (fSupports[getSupportID(node1ID)].getMx() != true) {
-                equations(i, 5) = DOF;
-                DOF++;
+            else if (aux(node1ID, 1) == 2)
+            {
+                equations(i, 0) = equations(aux(node1ID, 0), 3);
+                equations(i, 1) = equations(aux(node1ID, 0), 4);
+                equations(i, 2) = equations(aux(node1ID, 0), 5);
             }
         }
         
+        // Node 2 enumeration.
+        if (aux(node2ID, 0) == -1) // Checks if it is the first element to be connected to the node.
+        {
+            aux(node2ID, 0) = i; // Stores which element is firstly connected.
+            aux(node2ID, 1) = 2; // Stores which node of the element is connected.
+            
+            if (this->getSupportID(node2ID) == -1) // Check if there is any support restricting the node.
+            {
+                equations(i, 3) = DOF;
+                DOF++;
+                equations(i, 4) = DOF;
+                DOF++;
+                equations(i, 5) = DOF;
+                DOF++;
+            }
+            else
+            {
+                if (fSupports[getSupportID(node2ID)].getFx() != true) {
+                    equations(i, 3) = DOF;
+                    DOF++;
+                }
+                if (fSupports[getSupportID(node2ID)].getFy() != true) {
+                    equations(i, 4) = DOF;
+                    DOF++;
+                }
+                if (fSupports[getSupportID(node2ID)].getMx() != true) {
+                    equations(i, 5) = DOF;
+                    DOF++;
+                }
+            }
+            
+        }
+        else
+        {
+            if (aux(node2ID, 1) == 1)
+            {
+                equations(i, 3) = equations(aux(node2ID, 0), 0);
+                equations(i, 4) = equations(aux(node2ID, 0), 1);
+                equations(i, 5) = equations(aux(node2ID, 0), 2);
+            }
+            else if (aux(node2ID, 1) == 2)
+            {
+                equations(i, 3) = equations(aux(node2ID, 0), 3);
+                equations(i, 4) = equations(aux(node2ID, 0), 4);
+                equations(i, 5) = equations(aux(node2ID, 0), 5);
+            }
+        }
     }
+    
     // Enumerate the restrict degrees of freedom.
     for (int i = 0; i < fElements.size(); i++)
     {
         int node1ID = fElements[i].getNode1ID();
         int node2ID = fElements[i].getNode2ID();
+        
         // Node 1 enumeration.
-        if (this->getSupportID(node1ID) != -1)
+        if (aux(node1ID, 0) == i && aux(node1ID, 1) == 1) // Checks if it is the first element to be connected to the node.
         {
-            if (fSupports[getSupportID(node1ID)].getFx() == true) {
-                equations(i, 0) = DOF;
-                DOF++;
-            }
-            if (fSupports[getSupportID(node1ID)].getFy() == true) {
-                equations(i, 1) = DOF;
-                DOF++;
-            }
-            if (fSupports[getSupportID(node1ID)].getMx() == true) {
-                equations(i, 2) = DOF;
-                DOF++;
+            if (this->getSupportID(node1ID) != -1) // Check if there is any support restricting the node.
+            {
+                if (fSupports[getSupportID(node1ID)].getFx() == true)
+                {
+                    equations(i, 0) = DOF;
+                    DOF++;
+                }
+                if (fSupports[getSupportID(node1ID)].getFy() == true)
+                {
+                    equations(i, 1) = DOF;
+                    DOF++;
+                }
+                if (fSupports[getSupportID(node1ID)].getMx() == true)
+                {
+                    equations(i, 2) = DOF;
+                    DOF++;
+                }
             }
         }
+        else
+        {
+            if (aux(node1ID, 1) == 1)
+            {
+                equations(i, 0) = equations(aux(node1ID, 0), 0);
+                equations(i, 1) = equations(aux(node1ID, 0), 1);
+                equations(i, 2) = equations(aux(node1ID, 0), 2);
+            }
+            else if (aux(node1ID, 1) == 2)
+            {
+                equations(i, 0) = equations(aux(node1ID, 0), 3);
+                equations(i, 1) = equations(aux(node1ID, 0), 4);
+                equations(i, 2) = equations(aux(node1ID, 0), 5);
+            }
+        }
+        
         // Node 2 enumeration.
-        if (this->getSupportID(node2ID) != -1)
+        if (aux(node2ID, 0) == i && aux(node2ID, 1) == 2) // Checks if it is the first element to be connected to the node.
         {
-            if (fSupports[getSupportID(node1ID)].getFx() == true) {
-                equations(i, 3) = DOF;
-                DOF++;
-            }
-            if (fSupports[getSupportID(node1ID)].getFy() == true) {
-                equations(i, 4) = DOF;
-                DOF++;
-            }
-            if (fSupports[getSupportID(node1ID)].getMx() == true) {
-                equations(i, 5) = DOF;
-                DOF++;
+            if (this->getSupportID(node2ID) != -1) // Check if there is any support restricting the node.
+            {
+                if (fSupports[getSupportID(node2ID)].getFx() == true)
+                {
+                    equations(i, 3) = DOF;
+                    DOF++;
+                }
+                if (fSupports[getSupportID(node2ID)].getFy() == true)
+                {
+                    equations(i, 4) = DOF;
+                    DOF++;
+                }
+                if (fSupports[getSupportID(node2ID)].getMx() == true)
+                {
+                    equations(i, 5) = DOF;
+                    DOF++;
+                }
             }
         }
+        else
+        {
+            if (aux(node2ID, 1) == 1)
+            {
+                equations(i, 3) = equations(aux(node1ID, 0), 0);
+                equations(i, 4) = equations(aux(node1ID, 0), 1);
+                equations(i, 5) = equations(aux(node1ID, 0), 2);
+            }
+            else if (aux(node2ID, 1) == 2)
+            {
+                equations(i, 3) = equations(aux(node1ID, 0), 3);
+                equations(i, 4) = equations(aux(node1ID, 0), 4);
+                equations(i, 5) = equations(aux(node1ID, 0), 5);
+            }
+        }
+        
         int localEquations[6] = {equations(i, 0), equations(i, 1), equations(i, 2), equations(i, 3), equations(i, 4), equations(i, 5)};
         fElements[i].setEquations(localEquations);
     }
@@ -207,6 +293,19 @@ TPZFMatrix<double> TStructure::getK() const {
     int nDOF = this->getNDOF();
     TPZFMatrix<double> K(nDOF, nDOF, 0);
     
+    for (int i = 0; i < fElements.size(); i++)
+    {
+        TElement elem = fElements[i];
+        TPZFMatrix<double> kLocal = elem.getK();
+        
+        for (int aux1 = 0; aux1 < 6; aux1++)
+        {
+            for (int aux2 = 0; aux2 < 6; aux2++)
+            {
+                K(elem.getEquations()[aux1]-1, elem.getEquations()[aux2]-1) += kLocal(aux1, aux2);
+            }
+        }
+    }
     return K;
 }
 

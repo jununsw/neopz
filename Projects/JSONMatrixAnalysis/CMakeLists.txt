@@ -6,7 +6,6 @@ set(main_SRCS ${sources} ${headers} ${data})
 set(CMAKE_CXX_FLAGS "-std=c++11")
 
 
-
 add_executable(JSONMatrixAnalysis ${main_SRCS})
 
 target_link_libraries(JSONMatrixAnalysis pz)

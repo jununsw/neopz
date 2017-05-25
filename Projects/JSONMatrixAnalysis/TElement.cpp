@@ -71,6 +71,11 @@ int TElement::getMaterialID() const {
     return fMaterialID;
 }
 
+// getEquations - accesses the equations of the element.
+int* const TElement::getEquations() {
+    return fEquations;
+}
+
 // getX1 - accesses the x1 coordinate of the element.
 double TElement::getX1() const {
     TNode node = (*fStructure).getNodes()[fLocalNodesIDs[0]];

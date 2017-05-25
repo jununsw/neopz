@@ -39,6 +39,8 @@ public:
     bool getHinge2() const;
     // getMaterial - accesses the material of the element.
     int getMaterialID() const;
+    // getEquations - accesses the equations of the element.
+    int* const getEquations();
     
     // getX1 - accesses the x1 coordinate of the element.
     double getX1() const;

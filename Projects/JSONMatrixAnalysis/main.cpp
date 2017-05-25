@@ -39,6 +39,11 @@ int main()
         TPZFMatrix<double> k = elements[i].getK();
         k.Print(cout);
 	}
+    int eq[6] = {4,6,5,1,2,3};
+    elements[0].setEquations(eq);
+    int eq2[6] = {1,2,3,7,8,9};
+    elements[1].setEquations(eq2);
+    structure.getK().Print(cout);
 
     cout << endl << "NDOF: " << structure.getNDOF() << endl;
     return 0;
