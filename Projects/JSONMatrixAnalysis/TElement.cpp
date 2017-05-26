@@ -207,13 +207,13 @@ void TElement::setMaterialID(const int& MaterialID) {
 }
 
 // setEquations - modifies the element's equations indexes.
-void TElement::setEquations(int* Equations) {
-    fEquations[0] = Equations[0];
-    fEquations[1] = Equations[1];
-    fEquations[2] = Equations[2];
-    fEquations[3] = Equations[3];
-    fEquations[4] = Equations[4];
-    fEquations[5] = Equations[5];
+void TElement::setEquations(int Eq1, int Eq2, int Eq3, int Eq4, int Eq5, int Eq6) {
+    fEquations[0] = Eq1;
+    fEquations[1] = Eq2;
+    fEquations[2] = Eq3;
+    fEquations[3] = Eq4;
+    fEquations[4] = Eq5;
+    fEquations[5] = Eq6;
 }
 
 // Assignment operator.

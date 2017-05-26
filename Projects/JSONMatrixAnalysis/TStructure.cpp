@@ -283,8 +283,7 @@ void TStructure::setEquations() {
             }
         }
         
-        int localEquations[6] = {equations(i, 0), equations(i, 1), equations(i, 2), equations(i, 3), equations(i, 4), equations(i, 5)};
-        fElements[i].setEquations(localEquations);
+        fElements[i].setEquations(equations(i, 0), equations(i, 1), equations(i, 2), equations(i, 3), equations(i, 4), equations(i, 5));
     }
 }
 

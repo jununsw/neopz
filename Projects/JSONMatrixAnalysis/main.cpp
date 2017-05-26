@@ -32,17 +32,14 @@ int main()
     cout << "Materials: " << materials.size() << endl;
     cout << "Supports: " << supports.size() << endl << endl;
     
-	for (int i = 0; i < elements.size(); i++)
-	{
-		elements[i].print();
-		cout << endl;
+    for (int i = 0; i < elements.size(); i++)
+    {
+        cout << endl;
         TPZFMatrix<double> k = elements[i].getK();
+        elements[i].print();
         k.Print(cout);
-	}
-    int eq[6] = {4,6,5,1,2,3};
-    elements[0].setEquations(eq);
-    int eq2[6] = {1,2,3,7,8,9};
-    elements[1].setEquations(eq2);
+    }
+    
     structure.getK().Print(cout);
 
     cout << endl << "NDOF: " << structure.getNDOF() << endl;

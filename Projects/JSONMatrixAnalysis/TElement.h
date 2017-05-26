@@ -62,7 +62,7 @@ public:
     // getT - evaluates the stiffness matrix of the element.
     TPZFMatrix<double> getK() const;
     // setEquations - modifies the element's equations indexes.    
-    void setEquations(int* Equations);
+    void setEquations(int Eq1, int Eq2, int Eq3, int Eq4, int Eq5, int Eq6);
     
 	// setLocalNodesIDs - modifies the IDs of the nodes.
 	void setLocalNodesIDs(int* NodesIDs);
@@ -72,8 +72,6 @@ public:
     void setNode2ID(const int& Node2ID);
     // setMaterial - modifies the element's material.
     void setMaterialID(const int& MaterialID);
-    // setEquations - modifies the element's equations indexes.
-    void setMaterialID(int* Equations);
     
     // Assignment operator.
     TElement& operator= (const TElement& E);
