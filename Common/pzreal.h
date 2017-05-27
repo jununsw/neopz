@@ -21,6 +21,10 @@
 #include <iostream>
 #include <complex>
 #include <config.h>
+#include "fpo_exceptions.h"
+
+void DebugStop();
+
 
 /** @brief Gets maxime value between a and b */
 #ifndef MAX
