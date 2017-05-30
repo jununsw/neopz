@@ -675,11 +675,19 @@ inline const T& Min( const T & a, const T &b ) {
 
 
 // SPECIAL FUNCTIONS NON STANDARD IN WINDOWS SYSTEM
-
+#if !defined(__cplusplus) || __cplusplus < 201103L // If we aren't using C++11.
 /**
  * Function erf (Error function) implemented in 
  * http://www.johndcook.com/cpp_erf.html
  */
 REAL erf(REAL arg);
+
+#endif // not C++11
+
+#if defined(_MSC_VER) && _MSC_VER < 1900 // Microsoft Visual Studio < 2015
+
+#define isnan(x) _isnan(x)
+
+#endif
 
 #endif
