@@ -10,7 +10,6 @@
 #include "TPZVecL2.h"
 #include "pzbndcond.h"
 #include "TPZMatLaplacian.h"
-#include "mixedpoisson.h"
 #include "TPZLagrangeMultiplier.h"
 
 
@@ -690,12 +689,12 @@ void TPZMHMixedMeshControl::Hybridize()
         std::list<TPZCompElSide> &updatelist = connectedmap[it->second.second];
         for (std::list<TPZCompElSide>::iterator itlist = updatelist.begin(); itlist != updatelist.end(); itlist++)
         {
-            TPZCompElSide small = *itlist;
-            TPZInterpolatedElement *smallel = dynamic_cast<TPZInterpolatedElement *>(small.Element());
-            if (smallel->NSideConnects(small.Side()) != 1) {
+            TPZCompElSide smallCompElSide = *itlist;
+            TPZInterpolatedElement *smallel = dynamic_cast<TPZInterpolatedElement *>(smallCompElSide.Element());
+            if (smallel->NSideConnects(smallCompElSide.Side()) != 1) {
                 DebugStop();
             }
-            TPZConnect &c = smallel->SideConnect(0, small.Side());
+            TPZConnect &c = smallel->SideConnect(0, smallCompElSide.Side());
             TPZConnect::TPZDepend *dep = c.FirstDepend();
             if(dep->fDepConnectIndex != origdepindex)
             {
