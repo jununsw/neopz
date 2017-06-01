@@ -2,13 +2,22 @@
     "Nodes":
     [
     {
-        "X": [0, 240]
+        "X": [0, 0]
     },
     {
-        "X": [240, 240]
+        "X": [0, 4]
     },
     {
-        "X": [240, 0]
+        "X": [0, 6]
+    },
+    {
+        "X": [6, 6]
+    },
+    {
+        "X": [6, 2]
+    },
+    {
+        "X": [6, 0]
     }
     ],
     "Materials":
@@ -22,12 +31,12 @@
     "Supports":
     [
     {
-        "Conditions": [true, true, false],
+        "Conditions": [true, true, true],
         "Node": 0
     },
     {
         "Conditions": [true, true, true],
-        "Node": 2
+        "Node": 5
     }
     ],
     "Elements":
@@ -39,8 +48,28 @@
     },
     {
         "Nodes": [1,2],
+        "Hinges": [false, true],
+        "Material": 0
+    },
+    {
+        "Nodes": [2,3],
         "Hinges": [false, false],
         "Material": 0
-    }    
+    },
+    {
+        "Nodes": [3,4],
+        "Hinges": [true, false],
+        "Material": 0
+    },
+    {
+        "Nodes": [4,5],
+        "Hinges": [false, true],
+        "Material": 0
+    },
+    {
+        "Nodes": [4,1],
+        "Hinges": [true, true],
+        "Material": 0
+    }
     ]
 }

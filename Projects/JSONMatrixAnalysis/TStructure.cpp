@@ -278,7 +278,7 @@ void TStructure::setEquations() {
             }
         }
     }
-    
+
     // Enumerates the known (restrict) degrees of freedom.
     for (int i = 0; i < fElements.size(); i++)
     {
@@ -363,8 +363,8 @@ void TStructure::setEquations() {
         {
             if (aux(node2ID, 1) == 1)
             {
-                equations(i, 3) = equations(aux(node1ID, 0), 0);
-                equations(i, 4) = equations(aux(node1ID, 0), 1);
+                equations(i, 3) = equations(aux(node2ID, 0), 0);
+                equations(i, 4) = equations(aux(node2ID, 0), 1);
                 
                 if (fElements[i].getHinge2() == false)  // Checks if the element is non-hinged.
                 {
@@ -376,8 +376,8 @@ void TStructure::setEquations() {
             }
             else if (aux(node2ID, 1) == 2)
             {
-                equations(i, 3) = equations(aux(node1ID, 0), 3);
-                equations(i, 4) = equations(aux(node1ID, 0), 4);
+                equations(i, 3) = equations(aux(node2ID, 0), 3);
+                equations(i, 4) = equations(aux(node2ID, 0), 4);
                 
                 if (fElements[i].getHinge2() == false)  // Checks if the element is non-hinged.
                 {

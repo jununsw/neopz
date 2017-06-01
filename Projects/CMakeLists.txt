@@ -135,16 +135,10 @@ ENABLE_TESTING()
 			#Adaptivity based on mesh cloning (Edimar Cesar thesis)
 			#add_subdirectory(Poisson_ArcTan)
 
-<<<<<<< HEAD
-			#projeto Diogo
-			add_subdirectory(Plasticity)
-
 			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
 			#Matrix Analysis with JSON:
 			add_subdirectory(JSONMatrixAnalysis)
 
-=======
->>>>>>> refs/remotes/origin/master
 			add_subdirectory(Elasticity2D)
 			add_subdirectory(Gridgeneration)
 			#add_subdirectory(Poisson2DLabyrinth)
@@ -159,9 +153,6 @@ ENABLE_TESTING()
 
 			#Projeto Lua 2012
 			add_subdirectory(Lua01)
-			
-			#Analise Matricial de Trelicas
-			add_subdirectory(TrussExample)
 
 			#teste nathan
 			add_subdirectory(PlasticityPV)

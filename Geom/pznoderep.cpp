@@ -29,18 +29,6 @@ bool TPZNodeRep<N,Topology>::IsLinearMapping() const
     return true;
 }
 
-<<<<<<< HEAD
-
-template class pzgeom::TPZNodeRep<1,TPZPoint>;
-template class pzgeom::TPZNodeRep<2,TPZLine>;
-template class pzgeom::TPZNodeRep<3,TPZTriangle>;
-template class pzgeom::TPZNodeRep<4,TPZQuadrilateral>;
-template class pzgeom::TPZNodeRep<5,TPZPyramid>;
-template class pzgeom::TPZNodeRep<4,TPZTetrahedron>;
-template class pzgeom::TPZNodeRep<6,TPZPrism>;
-template class pzgeom::TPZNodeRep<8,TPZCube>;
-
-=======
 template class TPZNodeRep<1,TPZPoint>;
 template class TPZNodeRep<2,TPZLine>;
 template class TPZNodeRep<3,TPZTriangle>;
@@ -50,4 +38,3 @@ template class TPZNodeRep<4,TPZTetrahedron>;
 template class TPZNodeRep<6,TPZPrism>;
 template class TPZNodeRep<8,TPZCube>;
 }
->>>>>>> refs/remotes/origin/master
