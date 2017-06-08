@@ -1,5 +1,5 @@
 /* This file was created by Gustavo BATISTELA.
- It contains the definitions of functions of _ classes.*/
+ It contains the definitions of functions of the TNode class.*/
 
 #include "TNode.h"
 

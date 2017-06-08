@@ -27,19 +27,12 @@ int main()
 	vector<TSupport> supports = structure.getSupports();
 	vector<TElement> elements = structure.getElements();
     
-    cout << endl << "Elements: " << elements.size() << endl;
-    cout << "Nodes: " << nodes.size() << endl;
-    cout << "Materials: " << materials.size() << endl;
-    cout << "Supports: " << supports.size() << endl;
-    
-    for (int i = 0; i < elements.size(); i++)
-    {
-        cout << endl;
-        elements[i].print();
-    }
-    
     structure.getK().Print(cout);
+    structure.getPartitionedK().Print(cout);
 
-    cout << endl << "NDOF: " << structure.getNDOF() << endl;
+    cout << "NDOF: " << structure.getNDOF() << endl;
+    cout << "CDOF: " << structure.getCDOF() << endl;
+    cout << "UDOF: " << structure.getUDOF() << endl;
+    
     return 0;
 }

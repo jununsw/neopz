@@ -1,5 +1,5 @@
 /* This file was created by Gustavo ALCALA BATISTELA.
- It contains the definitions of functions of _ classes.*/
+ It contains the definitions of functions of the TElement class.*/
 
 #include "TElement.h"
 #include "TStructure.h"
@@ -155,34 +155,52 @@ TPZFMatrix<double> TElement::getK() const {
     double A = material.getA();
     double I = material.getI();
     double L = this->getL();
-    TPZFMatrix<double> t = this->getT();
+    double lx = this->getCos();
+    double ly = this->getSin();
     
     TPZFMatrix<double> k(6, 6, 0);
-    k(0, 0) = A*E/L;
-    k(0, 3) = -A*E/L;
-    k(1, 1) = 12*E*I/(L*L*L);
-    k(1, 2) = 6*E*I/(L*L);
-    k(1, 4) = -12*E*I/(L*L*L);
-    k(1, 5) = 6*E*I/(L*L);
-    k(2, 1) = 6*E*I/(L*L);
-    k(2, 2) = 4*E*I/L;
-    k(2, 4) = -6*E*I/(L*L);
-    k(2, 5) = 2*E*I/L;
-    k(3, 0) = -A*E/L;
-    k(3, 3) = A*E/L;
-    k(4, 1) = -12*E*I/(L*L*L);
-    k(4, 2) = -6*E*I/(L*L);
-    k(4, 4) = 12*E*I/(L*L*L);
-    k(4, 5) = -6*E*I/(L*L);
-    k(5, 1) = 6*E*I/(L*L);
-    k(5, 2) = 2*E*I/L;
-    k(5, 4) = -6*E*I/(L*L);
-    k(5, 5) = 4*E*I/L;
     
-    t.Transpose();
-    k = t*k;
-    t.Transpose();
-    k = k*t;
+    k(0, 0) = (A*E/L*(lx*lx) + 12*E*I*(ly*ly)/(L*L*L));
+    k(0, 1) = (A*E/L - 12*E*I/(L*L*L))*(lx*ly);
+    k(0, 2) = -(6*E*I/(L*L))*ly;
+    k(0, 3) = -(A*E/L*(lx*lx) + 12*E*I*(ly*ly)/(L*L*L));
+    k(0, 4) = -(A*E/L - 12*E*I/(L*L*L))*(lx*ly);
+    k(0, 5) = -(6*E*I/(L*L))*ly;
+    
+    k(1, 0) = (A*E/L - 12*E*I/(L*L*L))*(lx*ly);
+    k(1, 1) = (A*E/L*(ly*ly) + 12*E*I*(lx*lx)/(L*L*L));
+    k(1, 2) = (6*E*I/(L*L))*lx;
+    k(1, 3) = -(A*E/L - 12*E*I/(L*L*L))*(lx*ly);
+    k(1, 4) = -(A*E/L*(ly*ly) + 12*E*I*(lx*lx)/(L*L*L));
+    k(1, 5) = (6*E*I/(L*L))*lx;
+    
+    k(2, 0) = -(6*E*I/(L*L))*ly;
+    k(2, 1) = (6*E*I/(L*L))*lx;
+    k(2, 2) = (4*E*I/(L));
+    k(2, 3) = (6*E*I/(L*L))*ly;
+    k(2, 4) = -(6*E*I/(L*L))*lx;
+    k(2, 5) = (2*E*I/(L));
+    
+    k(3, 0) = -(A*E/L*(lx*lx) + 12*E*I*(ly*ly)/(L*L*L));
+    k(3, 1) = -(A*E/L - 12*E*I/(L*L*L))*(lx*ly);
+    k(3, 2) = (6*E*I/(L*L))*ly;
+    k(3, 3) = (A*E/L*(lx*lx) + 12*E*I*(ly*ly)/(L*L*L));
+    k(3, 4) = (A*E/L - 12*E*I/(L*L*L))*(lx*ly);
+    k(3, 5) = (6*E*I/(L*L))*ly;
+
+    k(4, 0) = -(A*E/L - 12*E*I/(L*L*L))*(lx*ly);
+    k(4, 1) = -(A*E/L*(ly*ly) + 12*E*I*(lx*lx)/(L*L*L));
+    k(4, 2) = -(6*E*I/(L*L))*lx;
+    k(4, 3) = (A*E/L - 12*E*I/(L*L*L))*(lx*ly);
+    k(4, 4) = (A*E/L*(ly*ly) + 12*E*I*(lx*lx)/(L*L*L));
+    k(4, 5) = -(6*E*I/(L*L))*lx;
+    
+    k(5, 0) = -(6*E*I/(L*L))*ly;
+    k(5, 1) = (6*E*I/(L*L))*lx;
+    k(5, 2) = (2*E*I/(L));
+    k(5, 3) = (6*E*I/(L*L))*ly;
+    k(5, 4) = -(6*E*I/(L*L))*lx;
+    k(5, 5) = (4*E*I/(L));
     
     return k;
 }
@@ -193,20 +211,20 @@ void TElement::setLocalNodesIDs(int* NodesIDs) {
     fLocalNodesIDs[1] = NodesIDs[1];
 }
 
-// setNode1 - modifies the element's node 1.
+// setNode1 - modifies the element node 1.
 void TElement::setNode1ID(const int& Node1ID) {
 	fLocalNodesIDs[0] = Node1ID;
 }
-// setNode2 - modifies the element's node 2.
+// setNode2 - modifies the element node 2.
 void TElement::setNode2ID(const int& Node2ID) {
     fLocalNodesIDs[1] = Node2ID;
 }
-// setMaterial - modifies the element's material.
+// setMaterial - modifies the element material.
 void TElement::setMaterialID(const int& MaterialID) {
     fMaterialID = MaterialID;
 }
 
-// setEquations - modifies the element's equations indexes.
+// setEquations - modifies the element equations indexes.
 void TElement::setEquations(int Eq1, int Eq2, int Eq3, int Eq4, int Eq5, int Eq6) {
     fEquations[0] = Eq1;
     fEquations[1] = Eq2;

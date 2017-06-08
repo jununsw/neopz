@@ -1,5 +1,5 @@
 /* This file was created by Gustavo ALCALA BATISTELA.
- It is a header file containing the definition of the _________
+ It is a header file containing the definition of the TElement class
  and the declaration of its members.*/
 
 #ifndef TELEMENT_H

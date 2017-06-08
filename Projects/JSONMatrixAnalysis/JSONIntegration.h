@@ -1,6 +1,6 @@
 /* This file was created by Gustavo ALCALA BATISTELA.
- It is a header file containing the definition of the _________
- and the declaration of its members.*/
+ It is a header file containing the definition of functions
+ that integrate JSON with the structure classes.*/
 
 #ifndef JSONINTEGRATION_H
 #define JSONINTEGRATION_H

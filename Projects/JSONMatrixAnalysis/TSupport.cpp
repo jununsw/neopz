@@ -1,5 +1,5 @@
 /* This file was created by Gustavo BATISTELA.
- It contains the definitions of functions of _ classes.*/
+ It contains the definitions of functions of the TSupport class.*/
 
 #include "TSupport.h"
 #include "TStructure.h"
@@ -38,7 +38,7 @@ bool TSupport::getFy() const {
 bool TSupport::getMx() const {
     return fConditions[2];
 }
-// getConditions - accesses the vector of support conditoins.
+// getConditions - accesses the vector of support conditions.
 bool* const TSupport::getConditions() {
 	return fConditions;
 }

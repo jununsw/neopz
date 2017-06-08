@@ -1,5 +1,5 @@
 /* This file was created by Gustavo ALCALA BATISTELA.
-It is a header file containing the definition of the _________
+It is a header file containing the definition of the TStructure class
 and the declaration of its members.*/
 
 #ifndef TSTRUCTURE_H
@@ -40,10 +40,16 @@ public:
     int getSupportID(int NodeID);
     // getNDOF - returns the number of degrees of freedom of the structure.
     int getNDOF() const;
-    // setEquations - enumerates the equations related to each element.
+    // getCDOF - returns the number of constrained degrees of freedom of the structure.
+    int getCDOF() const;
+    // getUDOF - returns the number of unconstrained degrees of freedom of the structure.
+    int getUDOF() const;
+    // setEquations - enumerates the DOF associated with each element.
     void setEquations();
     // getK - returns the global stiffness matrix.
     TPZFMatrix<double> getK() const;
+    // getPartitionedK - returns the left upper block of the global stiffness matrix K.
+    TPZFMatrix<double> getPartitionedK() const;
     
 	// setNodes - modifies the vector of nodes.
 	void setNodes(const std::vector<TNode>& Nodes);

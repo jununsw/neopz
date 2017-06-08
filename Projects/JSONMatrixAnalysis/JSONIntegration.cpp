@@ -1,5 +1,5 @@
 /* This file was created by Gustavo ALCALA BATISTELA.
- It contains the definitions of functions of _ classes.*/
+ It contains the definitions of functions that integrate JSON with the structure classes.*/
 
 #include "JSONIntegration.h"
 

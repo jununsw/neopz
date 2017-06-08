@@ -1,5 +1,5 @@
 /* This file was created by Gustavo BATISTELA.
- It contains the definitions of functions of _ classes.*/
+ It contains the definitions of functions of the TStructure class.*/
 
 #include "TStructure.h"
 
@@ -56,347 +56,146 @@ int TStructure::getSupportID(int NodeID) {
 // getNDOF - returns the number of degrees of freedom of the structure.
 int TStructure::getNDOF() const {
     
-    int NDOF = 2*fNodes.size();  // Initial number of DOF, considering only vertical and horizontal displacements.
+    int NDOF = 2*fNodes.size();  // DOF counter variable, intialized considering vertical and horizontal displacements.
     
-    bool *aux = new bool[fNodes.size()];     // Auxiliar that keeps track if there are already non-hinged elements connected to a certain node.
-    std::fill_n(aux, fNodes.size(), false);
+    std::vector<bool> aux(fNodes.size());     // Auxiliar that keeps track if there are already non-hinged elements connected to a certain node.
+    std::fill_n(&aux[0], fNodes.size(), false);
     
-    for (int i = 0; i < fElements.size(); i++) {
-        TElement elem = fElements[i];
-        int Node1ID = elem.getNode1ID();
-        int Node2ID = elem.getNode2ID();
-        
-        if (elem.getHinge1() == true) {     // Checks if the element has a hinge at the first node.
+    for (int i = 0; i < fSupports.size(); i ++) {   // Counts the number of constrained rotation DOF.
+        if (fSupports[i].getMx() == true) {
+            aux[fSupports[i].getNodeID()] = true;
             NDOF++;
         }
-        else {  // Element has no hinge at the first node.
-            if (aux[Node1ID] == false) {  // Checks if the element is the first non-hinged element to be connected to the node.
-                NDOF++;
-                aux[Node1ID] = true;
-            }
-        }
-        
-        if (elem.getHinge2() == true) {     // Checks if the element has a hinge at the second node.
-            NDOF++;
-        }
-        else {  // Element has no hinge at the second node.
-            if (aux[Node2ID] == false) {  // Checks if the element is the first non-hinged element to be connected to the node.
-                NDOF++;
-                aux[Node2ID] = true;
-            }
-        }
-        
     }
-    delete [] aux;
+    
+    for (int i = 0; i < fElements.size(); i++) {    // Checks the number of unconstrained rotation DOF.
+        int Node1ID = fElements[i].getNode1ID();
+        int Node2ID = fElements[i].getNode2ID();
+        
+        if (fElements[i].getHinge1() == false) {    // Checks if the element is non-hinged at its 1st node.
+            if (aux[Node1ID] == false) {    // Ensure element is the first non-hinged element to be connected at its 1st node.
+                aux[Node1ID] = true;
+                NDOF++;
+            }
+        }
+        else {  // Case the element is hinged at its 1st node.
+            NDOF++;
+        }
+        
+        if (fElements[i].getHinge2() == false) {    // Checks if the element is non-hinged at its 2nd node.
+            if (aux[Node2ID] == false) {    // Ensure element is the first non-hinged element to be connected at its 2nd node.
+                aux[Node2ID] = true;
+                NDOF++;
+            }
+        }
+        else {  // Case the element is hinged at its 2nd node.
+            NDOF++;
+        }
+    }
+
     return NDOF;
 }
 
-// setEquations - enumerates the equations related to each element.
-void TStructure::setEquations() {
-
-    int DOF = 1;
-    TPZFMatrix<int> equations(fElements.size(), 6, -1); // Matrix which stores the equations of each element.
-    TPZFMatrix<int> aux(fNodes.size(), 2, -1);  // Auxiliar matrix.
-    bool *aux2 = new bool[fNodes.size()];   // Auxiliar that keeps track if there are already non-hinged elements connected to a certain node.
-    std::fill_n(aux2, fNodes.size(), false);
-    
-    // Enumerates the unknown degrees of freedom.
-    for (int i = 0; i < fElements.size(); i++)
-    {
-        int node1ID = fElements[i].getNode1ID();
-        int node2ID = fElements[i].getNode2ID();
-       
-        // Node 1 uDOF enumeration.
-        if (aux(node1ID, 0) == -1) // Checks if it is the first element to be connected to the node.
-        {
-            aux(node1ID, 0) = i; // Stores the first element connected to the node.
-            aux(node1ID, 1) = 1; // Stores which node (1 or 2) of the element is connected.
-            
-            if (this->getSupportID(node1ID) == -1) // Check if there is no support restricting the node.
-            {
-                equations(i, 0) = DOF;
-                DOF++;
-                equations(i, 1) = DOF;
-                DOF++;
-                equations(i, 2) = DOF;
-                DOF++;
-                
-                if (fElements[i].getHinge1() == false)  // If it is the first non-hinged element connected to the node.
-                {
-                    aux2[node1ID] = true;
-                }
-            }
-            else    // When there is a support at the node.
-            {
-                if (fSupports[getSupportID(node1ID)].getFx() != true) {
-                    equations(i, 0) = DOF;
-                    DOF++;
-                }
-                if (fSupports[getSupportID(node1ID)].getFy() != true) {
-                    equations(i, 1) = DOF;
-                    DOF++;
-                }
-                if (fSupports[getSupportID(node1ID)].getMx() != true || fElements[i].getHinge1() == true) {
-                    equations(i, 2) = DOF;
-                    DOF++;
-                }
-                if (fElements[i].getHinge1() == false) {  // If it is the first non-hinged element connected to the node.
-                    aux2[node1ID] = true;
-                }
-            }
-
+// getCDOF - returns the number of constrained degrees of freedom of the structure.
+int TStructure::getCDOF() const {
+    int CDOF = 0;    // DOF counter auxiliar variable.
+    for (int i = 0; i < fSupports.size(); i ++) {   // Counts the number of constrained DOF.
+        if (fSupports[i].getFx() == true) {
+            CDOF++;
         }
-        else    // When an element has already been connected to the node.
-        {
-            if (aux(node1ID, 1) == 1)   // Checks if the element's node 1 is the one connected to the node.
-            {
-                equations(i, 0) = equations(aux(node1ID, 0), 0);
-                equations(i, 1) = equations(aux(node1ID, 0), 1);
-                
-                if (fElements[i].getHinge1() == true) // Checks if the element has a hinge at node 1.
-                {
-                    equations(i, 2) = DOF;
-                    DOF++;
-                }
-                else if (aux2[node1ID] == false)
-                {
-                    equations(i, 2) = DOF;
-                    DOF++;
-                    aux2[node1ID] = true;
-                }
-                else
-                {
-                    equations(i, 2) = equations(aux(node1ID, 0), 2);
-                }
-            }
-            else if (aux(node1ID, 1) == 2)   // Checks if the element's node 2 is the one connected to the node.
-            {
-                equations(i, 0) = equations(aux(node1ID, 0), 3);
-                equations(i, 1) = equations(aux(node1ID, 0), 4);
-                
-                if (fElements[i].getHinge1() == true) // Checks if the element has a hinge at node 1.
-                {
-                    equations(i, 2) = DOF;
-                    DOF++;
-                }
-                else if (aux2[node1ID] == false)
-                {
-                    equations(i, 2) = DOF;
-                    DOF++;
-                    aux2[node1ID] = true;
-                }
-                else
-                {
-                    equations(i, 2) = equations(aux(node1ID, 0), 5);
-                }
-            }
+        if (fSupports[i].getFy() == true) {
+            CDOF++;
         }
-        
-        // Node 2 uDOF enumeration.
-        if (aux(node2ID, 0) == -1) // Checks if it is the first element to be connected to the node.
-        {
-            aux(node2ID, 0) = i; // Stores which element is firstly connected.
-            aux(node2ID, 1) = 2; // Stores which node of the element is connected.
-            
-            if (this->getSupportID(node2ID) == -1) // Check if there is any support restricting the node.
-            {
-                equations(i, 3) = DOF;
-                DOF++;
-                equations(i, 4) = DOF;
-                DOF++;
-                equations(i, 5) = DOF;
-                DOF++;
-                
-                if (fElements[i].getHinge2() == false)  // If it is the first non-hinged element connected to the node.
-                {
-                    aux2[node2ID] = true;
-                }
-            }
-            else
-            {
-                if (fSupports[getSupportID(node2ID)].getFx() != true) {
-                    equations(i, 3) = DOF;
-                    DOF++;
-                }
-                if (fSupports[getSupportID(node2ID)].getFy() != true) {
-                    equations(i, 4) = DOF;
-                    DOF++;
-                }
-                if (fSupports[getSupportID(node2ID)].getMx() != true || fElements[i].getHinge2() == true) {
-                    equations(i, 5) = DOF;
-                    DOF++;
-                }
-                if (fElements[i].getHinge2() == false) {  // If it is the first non-hinged element connected to the node.
-                    aux2[node2ID] = true;
-                }
-            }
-            
-        }
-        else
-        {
-            if (aux(node2ID, 1) == 1)   // Checks if the element's node 1 is the one connected to the node.
-            {
-                equations(i, 3) = equations(aux(node2ID, 0), 0);
-                equations(i, 4) = equations(aux(node2ID, 0), 1);
-                
-                if (fElements[i].getHinge2() == true) // Checks if the element has a hinge at node 1.
-                {
-                    equations(i, 5) = DOF;
-                    DOF++;
-                }
-                else if (aux2[node2ID] == false)
-                {
-                    equations(i, 5) = DOF;
-                    DOF++;
-                    aux2[node2ID] = true;
-                }
-                else
-                {
-                    equations(i, 5) = equations(aux(node2ID, 0), 2);
-                }
-            }
-            else if (aux(node2ID, 1) == 2)   // Checks if the element's node 2 is the one connected to the node.
-            {
-                equations(i, 3) = equations(aux(node2ID, 0), 3);
-                equations(i, 4) = equations(aux(node2ID, 0), 4);
-                
-                if (fElements[i].getHinge2() == true) // Checks if the element has a hinge at node 1.
-                {
-                    equations(i, 5) = DOF;
-                    DOF++;
-                }
-                else if (aux2[node2ID] == false)
-                {
-                    equations(i, 5) = DOF;
-                    DOF++;
-                    aux2[node2ID] = true;
-                }
-                else
-                {
-                    equations(i, 5) = equations(aux(node2ID, 0), 5);
-                }
-            }
+        if (fSupports[i].getMx() == true) {
+            CDOF++;
         }
     }
+    return CDOF;
+}
 
-    // Enumerates the known (restrict) degrees of freedom.
-    for (int i = 0; i < fElements.size(); i++)
-    {
-        int node1ID = fElements[i].getNode1ID();
-        int node2ID = fElements[i].getNode2ID();
-        
-        // Node 1 kDOF enumeration.
-        if (aux(node1ID, 0) == i && aux(node1ID, 1) == 1) // Checks if it is the first element to be connected to the node.
-        {
-            if (this->getSupportID(node1ID) != -1) // Check if there is any support restricting the node.
-            {
-                if (equations(i, 0) == -1 && fSupports[getSupportID(node1ID)].getFx() == true)
-                {
-                    equations(i, 0) = DOF;
-                    DOF++;
-                }
-                if (equations(i, 1) == -1 && fSupports[getSupportID(node1ID)].getFy() == true)
-                {
-                    equations(i, 1) = DOF;
-                    DOF++;
-                }
-                if (equations(i, 2) == -1 && fSupports[getSupportID(node1ID)].getMx() == true)
-                {
-                    equations(i, 2) = DOF;
-                    DOF++;
-                }
-            }
-        }
-        else
-        {
-            if (aux(node1ID, 1) == 1)
-            {
-                equations(i, 0) = equations(aux(node1ID, 0), 0);
-                equations(i, 1) = equations(aux(node1ID, 0), 1);
-                
-                if (fElements[i].getHinge1() == false)  // Checks if the element is non-hinged.
-                {
-                    if (fElements[aux(node1ID, 0)].getHinge1() == false)
-                    {
-                        equations(i, 2) = equations(aux(node1ID, 0), 2);
-                    }
-                }
-            }
-            else if (aux(node1ID, 1) == 2)
-            {
-                equations(i, 0) = equations(aux(node1ID, 0), 3);
-                equations(i, 1) = equations(aux(node1ID, 0), 4);
-                
-                if (fElements[i].getHinge1() == false)  // Checks if the element is non-hinged.
-                {
-                    if (fElements[aux(node1ID, 0)].getHinge2() == false)
-                    {
-                        equations(i, 2) = equations(aux(node1ID, 0), 5);
-                    }
-                }
-            }
-        }
-        
-        // Node 2 kDOF enumeration.
-        if (aux(node2ID, 0) == i && aux(node2ID, 1) == 2) // Checks if it is the first element to be connected to the node.
-        {
-            if (this->getSupportID(node2ID) != -1) // Check if there is any support restricting the node.
-            {
-                if (equations(i, 3) == -1 && fSupports[getSupportID(node2ID)].getFx() == true)
-                {
-                    equations(i, 3) = DOF;
-                    DOF++;
-                }
-                if (equations(i, 4) == -1 && fSupports[getSupportID(node2ID)].getFy() == true)
-                {
-                    equations(i, 4) = DOF;
-                    DOF++;
-                }
-                if (equations(i, 5) == -1 && fSupports[getSupportID(node2ID)].getMx() == true)
-                {
-                    equations(i, 5) = DOF;
-                    DOF++;
-                }
-            }
-        }
-        else
-        {
-            if (aux(node2ID, 1) == 1)
-            {
-                equations(i, 3) = equations(aux(node2ID, 0), 0);
-                equations(i, 4) = equations(aux(node2ID, 0), 1);
-                
-                if (fElements[i].getHinge2() == false)  // Checks if the element is non-hinged.
-                {
-                    if (fElements[aux(node2ID, 0)].getHinge1() == false)
-                    {
-                        equations(i, 2) = equations(aux(node2ID, 0), 2);
-                    }
-                }
-            }
-            else if (aux(node2ID, 1) == 2)
-            {
-                equations(i, 3) = equations(aux(node2ID, 0), 3);
-                equations(i, 4) = equations(aux(node2ID, 0), 4);
-                
-                if (fElements[i].getHinge2() == false)  // Checks if the element is non-hinged.
-                {
-                    if (fElements[aux(node2ID, 0)].getHinge2() == false)
-                    {
-                        equations(i, 2) = equations(aux(node2ID, 0), 5);
-                    }
-                }
-            }
-        }
+// getUDOF - returns the number of unconstrained degrees of freedom of the structure.
+int TStructure::getUDOF() const {
+    return (this->getNDOF() - this->getCDOF());
+}
+
+// setEquations - enumerates the DOF associated with each element.
+void TStructure::setEquations() {
+
+    TPZFMatrix<int> equations(fNodes.size(), 3, -1); // Matrix that stores the equations associated with each node.
+    int CDOF = this->getCDOF();
+    int count = this->getNDOF() - CDOF;
     
-        fElements[i].setEquations(equations(i, 0), equations(i, 1), equations(i, 2), equations(i, 3), equations(i, 4), equations(i, 5));
+    for (int i = 0; i < fSupports.size(); i ++) {   // Enumerates the constrained DOF.
+        if (fSupports[i].getFx() == true) {
+            equations(fSupports[i].getNodeID(), 0) = count;
+            count++;
+        }
+        if (fSupports[i].getFy() == true) {
+            equations(fSupports[i].getNodeID(), 1) = count;
+            count++;
+        }
+        if (fSupports[i].getMx() == true) {
+            equations(fSupports[i].getNodeID(), 2) = count;
+            count++;
+        }
+    }
+    
+    count = 0;
+    for (int i = 0; i < fElements.size(); i++) {    // Enumerates the unconstrained DOF.
+        int Node1ID = fElements[i].getNode1ID();
+        int Node2ID = fElements[i].getNode2ID();
+        int Node1RotationDOF;
+        int Node2RotationDOF;
+        
+        if (equations(Node1ID, 0) == -1) {
+            equations(Node1ID, 0) = count;
+            count++;
+        }
+        if (equations(Node1ID, 1) == -1) {
+            equations(Node1ID, 1) = count;
+            count++;
+        }
+        if (fElements[i].getHinge1() == false) {
+            
+            if (equations(Node1ID, 2) == -1) {
+                equations(Node1ID, 2) = count;
+                count++;
+            }
+            Node1RotationDOF = equations(Node1ID, 2);
+        }
+        else {
+            Node1RotationDOF = count;
+            count++;
+        }
+        
+        if (equations(Node2ID, 0) == -1) {
+            equations(Node2ID, 0) = count;
+            count++;
+        }
+        if (equations(Node2ID, 1) == -1) {
+            equations(Node2ID, 1) = count;
+            count++;
+        }
+        if (fElements[i].getHinge2() == false) {
+            if (equations(Node2ID, 2) == -1) {
+                equations(Node2ID, 2) = count;
+                count++;
+            }
+            Node2RotationDOF = equations(Node2ID, 2);
+        }
+        else {
+            Node2RotationDOF = count;
+            count++;
+        }
+        fElements[i].setEquations(equations(Node1ID, 0), equations(Node1ID, 1), Node1RotationDOF,
+                                  equations(Node2ID, 0), equations(Node2ID, 1), Node2RotationDOF);
     }
 }
 
 // getK - returns the global stiffness matrix.
 TPZFMatrix<double> TStructure::getK() const {
-    int nDOF = this->getNDOF();
-    TPZFMatrix<double> K(nDOF, nDOF, 0);
+    int NDOF = this->getNDOF();
+    TPZFMatrix<double> K(NDOF, NDOF, 0);
     
     for (int i = 0; i < fElements.size(); i++)
     {
@@ -407,11 +206,26 @@ TPZFMatrix<double> TStructure::getK() const {
         {
             for (int aux2 = 0; aux2 < 6; aux2++)
             {
-                K(elem.getEquations()[aux1]-1, elem.getEquations()[aux2]-1) += kLocal(aux1, aux2);
+                K(elem.getEquations()[aux1], elem.getEquations()[aux2]) += kLocal(aux1, aux2);
             }
         }
     }
     return K;
+}
+
+// getPartitionedK - returns the left upper block of the global stiffness matrix K.
+TPZFMatrix<double> TStructure::getPartitionedK() const {
+    int UDOF = this->getUDOF();
+    TPZFMatrix<double> partitionedK(UDOF, UDOF);
+    TPZFMatrix<double> K = this->getK();
+    
+    for (int i = 0; i < UDOF; i++) {
+        for (int j = 0; j < UDOF; j++)
+        {
+            partitionedK(i, j) = K(i, j);
+        }
+    }
+    return partitionedK;
 }
 
 // setNodes - modifies the vector of nodes.
