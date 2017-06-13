@@ -1,6 +1,6 @@
-/* This file was created by Gustavo ALCALA BATISTELA.
+/* This file was created by Gustavo BATISTELA.
  It is a header file containing the definition of the TSupport class
- and the declaration of its members.*/
+ and the declaration of its members. */
 
 #ifndef TSUPPORT_H
 #define TSUPPORT_H
@@ -16,7 +16,7 @@ class TSupport {
     
 public:
     // Default constructor.
-    TSupport(const bool Fx = false, const bool Fy = false, const bool Mx = false, 
+    TSupport(const bool Fx = false, const bool Fy = false, const bool M = false,
 		const int NodeID = 0, TStructure* Structure = nullptr);
     //Copy constructor.
     TSupport(const TSupport& S);
@@ -27,8 +27,8 @@ public:
     bool getFx() const;
     // getFy - accesses the Fy DOF of the support.
     bool getFy() const;
-    // getMx - accesses the Mx DOF of the support.
-    bool getMx() const;
+    // getM - accesses the M DOF of the support.
+    bool getM() const;
 	// getConditions - accesses the vector of suport conditions.
 	bool* const getConditions();
     // getNode - accesses the node of the support.
@@ -38,8 +38,8 @@ public:
     void setFx(const bool Fx);
     // setFy - modifies the Fy DOF of the support.
     void setFy(const bool Fy);
-    // setMx - modifies the Mx DOF of the support.
-    void setMx(const bool Mx);
+    // setM - modifies the M DOF of the support.
+    void setM(const bool M);
     // setNode - modifies the node of the support.
     void setNodeID(const int NodeID);
     

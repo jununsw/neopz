@@ -1,5 +1,5 @@
 /* This file was created by Gustavo BATISTELA.
- It contains the definitions of functions of the TMaterial class.*/
+ It contains the definitions of functions of the TMaterial class. */
 
 #include "TMaterial.h"
 
@@ -51,8 +51,8 @@ TMaterial& TMaterial::operator=(const TMaterial& M) {
 // Function that prints the information of a node.
 void TMaterial::print() {
     std::cout << "Material Properties:" << std::endl
-		<< " E: " << this->getE() << std::endl
-		<< " A: " << this->getA() << std::endl
-		<< " I: " << this->getI() << std::endl;
+		<< " E: " << fE << std::endl
+		<< " A: " << fA << std::endl
+		<< " I: " << fI << std::endl;
     std::cout << std::flush;
 }

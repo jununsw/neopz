@@ -1,5 +1,5 @@
-/* This file was created by Gustavo ALCALA BATISTELA.
- It contains the definitions of functions that integrate JSON with the structure classes.*/
+/* This file was created by Gustavo BATISTELA.
+ It contains the definitions of functions that integrate JSON with the structure classes. */
 
 #include "JSONIntegration.h"
 
@@ -40,9 +40,9 @@ void readJSON(const nlohmann::json& J, TStructure& S) {
 	{
         bool fx = jSupports.at(i)["Conditions"][0].get<bool>();
         bool fy = jSupports.at(i)["Conditions"][1].get<bool>();
-        bool mx = jSupports.at(i)["Conditions"][2].get<bool>();
+        bool m = jSupports.at(i)["Conditions"][2].get<bool>();
         int nodeID = jSupports.at(i)["Node"].get<int>();
-		TSupport support(fx, fy, mx, nodeID, &S);
+		TSupport support(fx, fy, m, nodeID, &S);
 		supports.push_back(support);
 	}
 	S.setSupports(supports);
@@ -67,6 +67,11 @@ void readJSON(const nlohmann::json& J, TStructure& S) {
 void writeJSON(nlohmann::json& J, const TStructure& S) {
     std::cout << "FOO" << std::endl << "FOO" << std::endl << "FOO" << std::endl;
 }
+
+
+
+
+
 
 /* TMaterial.
 void to_json(nlohmann::json& J, const TMaterial& M) {
@@ -98,7 +103,7 @@ void to_json(nlohmann::json& J, const TSupport& S) {
 void from_json(const nlohmann::json& J, TSupport& S) {
     S.setFx(J.at("Fx").get<bool>());
     S.setFy(J.at("Fy").get<bool>());
-    S.setMx(J.at("Mx").get<bool>());
+    S.setM(J.at("M").get<bool>());
     S.setNodeID(J.at("Node").get<int>());
 }
 

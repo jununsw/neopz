@@ -1,6 +1,6 @@
-/* This file was created by Gustavo ALCALA BATISTELA.
+/* This file was created by Gustavo BATISTELA.
  It is a header file containing the definition of the TDistributedLoad class
- and the declaration of its members.*/
+ and the declaration of its members. */
 
 #ifndef TDISTRIBUTEDLOAD_H
 #define TDISTRIBUTEDLOAD_H
@@ -13,15 +13,18 @@
 class TDistributedLoad {
     
 public:
+    // LoadType - enum argument which determines if the load will be given in terms of local or global reference axis.
+    enum LoadType {ELocal, EGlobal};
+    
     // Default constructor.
-    TDistributedLoad(int ElementID = -1, double LoadNode1 = 0, double LoadNode2 = 0, LoadType LT = EGlobal);
+    TDistributedLoad(int ElementID = -1, double LoadNode0 = 0, double LoadNode1 = 0, LoadType LT = EGlobal);
     //Copy constructor.
-    TDistributedLoad(const TDistributedLoad& D);
+    TDistributedLoad(const TDistributedLoad& DL);
     // Destructor.
-    TDistributedLoad();
+    ~TDistributedLoad();
         
     // Assignment operator.
-    TDistributedLoad& operator= (const TDistributedLoad& D);
+    TDistributedLoad& operator= (const TDistributedLoad& DL);
     
     // Function that prints the load information.
     void print();
@@ -29,9 +32,9 @@ public:
 private:
     // Member variables:
     int fElementID;
+    double fLoadNode0;
     double fLoadNode1;
-    double fLoadNode2;
-    enum LoadType {ELocal, EGlobal};
+    LoadType fLT;
 };
 
 #endif

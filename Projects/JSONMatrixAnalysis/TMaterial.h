@@ -1,6 +1,6 @@
-/* This file was created by Gustavo ALCALA BATISTELA.
+/* This file was created by Gustavo BATISTELA.
  It is a header file containing the definition of the TMaterial class
- and the declaration of its members.*/
+ and the declaration of its members. */
 
 #ifndef TMATERIAL_H
 #define TMATERIAL_H

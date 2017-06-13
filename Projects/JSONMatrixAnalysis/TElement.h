@@ -1,6 +1,6 @@
-/* This file was created by Gustavo ALCALA BATISTELA.
+/* This file was created by Gustavo BATISTELA.
  It is a header file containing the definition of the TElement class
- and the declaration of its members.*/
+ and the declaration of its members. */
 
 #ifndef TELEMENT_H
 #define TELEMENT_H
@@ -20,8 +20,8 @@ class TElement {
     
 public:
     // Default constructor.
-    TElement(const int& Node1ID = -1, const int& Node2ID = -1, const bool& LHinge = false,
-             const bool& RHinge = false, const int& MaterialID = -1, TStructure* Structure = nullptr);
+    TElement(const int Node0ID = -1, const int Node1ID = -1, const bool Hinge0 = false,
+             const bool Hinge1 = false, const int MaterialID = -1, TStructure* Structure = nullptr);
     //Copy constructor.
     TElement(const TElement& E);
     // Destructor.
@@ -29,27 +29,27 @@ public:
     
 	// getNodes - accesses the nodes of the element.
 	int* const getLocalNodesIDs();
-    // getNode1 - accesses node1 of the element.
+    // getNode0ID - accesses the ID of the element's Node 0.
+    int getNode0ID() const;
+    // getNode1ID - accesses the ID of the element's Node 0.
     int getNode1ID() const;
-    // getNode2 - accesses node2 of the element.
-    int getNode2ID() const;
-    // getHinge1 - accesses the left hinge of the element.
+    // getHinge0 - accesses the hinge of the element at Node 0.
+    bool getHinge0() const;
+    // getHinge1 - accesses the hinge of the element at Node 1.
     bool getHinge1() const;
-    // getHinge2 - accesses the right hinge of the element.
-    bool getHinge2() const;
     // getMaterial - accesses the material of the element.
     int getMaterialID() const;
     // getEquations - accesses the equations of the element.
     int* const getEquations();
     
-    // getX1 - accesses the x1 coordinate of the element.
+    // getX0 - accesses the x coordinate of the element's Node 0.
+    double getX0() const;
+    // getY0 - accesses the y coordinate of the element's Node 0.
+    double getY0() const;
+    // getX1 - accesses the x coordinate of the element's Node 1.
     double getX1() const;
-    // getY1 - accesses the y1 coordinate of the element.
+    // getY1 - accesses the y coordinate of the element's Node 1.
     double getY1() const;
-    // getX2 - accesses the x2 coordinate of the element.
-    double getX2() const;
-    // getY2 - accesses the y2 coordinate of the element.
-    double getY2() const;
     // getL - accesses the element length.
     double getL() const;
     // getCos - accesses the element cosine.
@@ -66,12 +66,12 @@ public:
     
 	// setLocalNodesIDs - modifies the IDs of the nodes.
 	void setLocalNodesIDs(int* NodesIDs);
-    // setNode1 - modifies the first node of the element.
-    void setNode1ID(const int& Node1ID);
-    // setNode2 - modifies the second node of the element.
-    void setNode2ID(const int& Node2ID);
+    // setNode0ID - modifies the element's Node 0.
+    void setNode0ID(int Node0ID);
+    // setNode1ID - modifies the element's Node 1.
+    void setNode1ID(int Node1ID);
     // setMaterial - modifies the element's material.
-    void setMaterialID(const int& MaterialID);
+    void setMaterialID(int MaterialID);
     
     // Assignment operator.
     TElement& operator= (const TElement& E);

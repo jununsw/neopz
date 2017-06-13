@@ -1,6 +1,6 @@
-/* This file was created by Gustavo ALCALA BATISTELA.
+/* This file was created by Gustavo BATISTELA.
  It is a header file containing the definition of functions
- that integrate JSON with the structure classes.*/
+ that integrate JSON with the structure classes. */
 
 #ifndef JSONINTEGRATION_H
 #define JSONINTEGRATION_H

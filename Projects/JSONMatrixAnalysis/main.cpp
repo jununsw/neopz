@@ -4,6 +4,8 @@
 #include "TNode.h"
 #include "TSupport.h"
 #include "TElement.h"
+#include "TNodalLoad.h"
+#include "TDistributedLoad.h"
 #include "JSONIntegration.h"
 #include "pzfmatrix.h"
 #include "json.hpp"

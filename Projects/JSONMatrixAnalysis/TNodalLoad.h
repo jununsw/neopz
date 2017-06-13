@@ -1,6 +1,6 @@
-/* This file was created by Gustavo ALCALA BATISTELA.
+/* This file was created by Gustavo BATISTELA.
  It is a header file containing the definition of the TNodalLoad class
- and the declaration of its members.*/
+ and the declaration of its members. */
 
 #ifndef TNODALLOAD_H
 #define TNODALLOAD_H
@@ -14,9 +14,9 @@ class TNodalLoad {
     
 public:
     // Default constructor.
-    TNodalLoad(int NodeID = -1, double Fx = 0, double Fy = 0, double M = 0);
+    TNodalLoad(double Fx = 0, double Fy = 0, double M = 0, int NodeID = -1);
     //Copy constructor.
-    TNodalLoad(const TNodalLoad& N);
+    TNodalLoad(const TNodalLoad& NL);
     // Destructor.
     ~TNodalLoad();
     
@@ -35,7 +35,7 @@ public:
     void setM(double M);
     
     // Assignment operator.
-    TNodalLoad& operator= (const TNodalLoad& N);
+    TNodalLoad& operator= (const TNodalLoad& NL);
     
     // Function that prints the load information.
     void print();

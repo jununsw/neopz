@@ -1,16 +1,16 @@
 /* This file was created by Gustavo BATISTELA.
- It contains the definitions of functions of the TStructure class.*/
+ It contains the definitions of functions of the TStructure class. */
 
 #include "TStructure.h"
 
 // Default constructor.
 TStructure::TStructure(const std::vector<TNode>& Nodes, const std::vector<TMaterial>& Materials,
 const std::vector<TSupport>& Supports, 	const std::vector<TElement>& Elements)
-	: fNodes(Nodes), fMaterials(Materials), fSupports(Supports), fElements(Elements) { }
+    : fNodes(Nodes), fMaterials(Materials), fSupports(Supports), fElements(Elements) { }
 
 //Copy constructor.
 TStructure::TStructure(const TStructure& S) 
-	: fNodes(S.fNodes), fMaterials(S.fMaterials), fSupports(S.fSupports), fElements(S.fElements) { }
+    : fNodes(S.fNodes), fMaterials(S.fMaterials), fSupports(S.fSupports), fElements(S.fElements) { }
 
 // Destructor.
 TStructure::~TStructure() { }
@@ -62,33 +62,33 @@ int TStructure::getNDOF() const {
     std::fill_n(&aux[0], fNodes.size(), false);
     
     for (int i = 0; i < fSupports.size(); i ++) {   // Counts the number of constrained rotation DOF.
-        if (fSupports[i].getMx() == true) {
+        if (fSupports[i].getM() == true) {
             aux[fSupports[i].getNodeID()] = true;
             NDOF++;
         }
     }
     
     for (int i = 0; i < fElements.size(); i++) {    // Checks the number of unconstrained rotation DOF.
+        int Node0ID = fElements[i].getNode0ID();
         int Node1ID = fElements[i].getNode1ID();
-        int Node2ID = fElements[i].getNode2ID();
         
-        if (fElements[i].getHinge1() == false) {    // Checks if the element is non-hinged at its 1st node.
-            if (aux[Node1ID] == false) {    // Ensure element is the first non-hinged element to be connected at its 1st node.
+        if (fElements[i].getHinge0() == false) {    // Checks if the element is non-hinged at its Node 0.
+            if (aux[Node0ID] == false) {    // Ensure element is the first non-hinged element to be connected at its Node 0.
+                aux[Node0ID] = true;
+                NDOF++;
+            }
+        }
+        else {  // Case the element is hinged at its Node 0.
+            NDOF++;
+        }
+        
+        if (fElements[i].getHinge1() == false) {    // Checks if the element is non-hinged at its Node 1.
+            if (aux[Node1ID] == false) {    // Ensure element is the first non-hinged element to be connected at its Node 1.
                 aux[Node1ID] = true;
                 NDOF++;
             }
         }
-        else {  // Case the element is hinged at its 1st node.
-            NDOF++;
-        }
-        
-        if (fElements[i].getHinge2() == false) {    // Checks if the element is non-hinged at its 2nd node.
-            if (aux[Node2ID] == false) {    // Ensure element is the first non-hinged element to be connected at its 2nd node.
-                aux[Node2ID] = true;
-                NDOF++;
-            }
-        }
-        else {  // Case the element is hinged at its 2nd node.
+        else {  // Case the element is hinged at its Node 1.
             NDOF++;
         }
     }
@@ -106,7 +106,7 @@ int TStructure::getCDOF() const {
         if (fSupports[i].getFy() == true) {
             CDOF++;
         }
-        if (fSupports[i].getMx() == true) {
+        if (fSupports[i].getM() == true) {
             CDOF++;
         }
     }
@@ -134,7 +134,7 @@ void TStructure::setEquations() {
             equations(fSupports[i].getNodeID(), 1) = count;
             count++;
         }
-        if (fSupports[i].getMx() == true) {
+        if (fSupports[i].getM() == true) {
             equations(fSupports[i].getNodeID(), 2) = count;
             count++;
         }
@@ -142,10 +142,31 @@ void TStructure::setEquations() {
     
     count = 0;
     for (int i = 0; i < fElements.size(); i++) {    // Enumerates the unconstrained DOF.
+        int Node0ID = fElements[i].getNode0ID();
         int Node1ID = fElements[i].getNode1ID();
-        int Node2ID = fElements[i].getNode2ID();
+        int Node0RotationDOF;
         int Node1RotationDOF;
-        int Node2RotationDOF;
+        
+        if (equations(Node0ID, 0) == -1) {
+            equations(Node0ID, 0) = count;
+            count++;
+        }
+        if (equations(Node0ID, 1) == -1) {
+            equations(Node0ID, 1) = count;
+            count++;
+        }
+        if (fElements[i].getHinge0() == false) {
+            
+            if (equations(Node0ID, 2) == -1) {
+                equations(Node0ID, 2) = count;
+                count++;
+            }
+            Node0RotationDOF = equations(Node0ID, 2);
+        }
+        else {
+            Node0RotationDOF = count;
+            count++;
+        }
         
         if (equations(Node1ID, 0) == -1) {
             equations(Node1ID, 0) = count;
@@ -156,7 +177,6 @@ void TStructure::setEquations() {
             count++;
         }
         if (fElements[i].getHinge1() == false) {
-            
             if (equations(Node1ID, 2) == -1) {
                 equations(Node1ID, 2) = count;
                 count++;
@@ -167,28 +187,8 @@ void TStructure::setEquations() {
             Node1RotationDOF = count;
             count++;
         }
-        
-        if (equations(Node2ID, 0) == -1) {
-            equations(Node2ID, 0) = count;
-            count++;
-        }
-        if (equations(Node2ID, 1) == -1) {
-            equations(Node2ID, 1) = count;
-            count++;
-        }
-        if (fElements[i].getHinge2() == false) {
-            if (equations(Node2ID, 2) == -1) {
-                equations(Node2ID, 2) = count;
-                count++;
-            }
-            Node2RotationDOF = equations(Node2ID, 2);
-        }
-        else {
-            Node2RotationDOF = count;
-            count++;
-        }
-        fElements[i].setEquations(equations(Node1ID, 0), equations(Node1ID, 1), Node1RotationDOF,
-                                  equations(Node2ID, 0), equations(Node2ID, 1), Node2RotationDOF);
+        fElements[i].setEquations(equations(Node0ID, 0), equations(Node0ID, 1), Node0RotationDOF,
+                                  equations(Node1ID, 0), equations(Node1ID, 1), Node1RotationDOF);
     }
 }
 

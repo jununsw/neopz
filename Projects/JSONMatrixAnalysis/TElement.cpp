@@ -1,16 +1,16 @@
-/* This file was created by Gustavo ALCALA BATISTELA.
- It contains the definitions of functions of the TElement class.*/
+/* This file was created by Gustavo BATISTELA.
+ It contains the definitions of functions of the TElement class. */
 
 #include "TElement.h"
 #include "TStructure.h"
 
 // Default constructor.
-TElement::TElement(const int& Node1ID, const int& Node2ID, const bool& Hinge1,
-                   const bool& Hinge2, const int& MaterialID, TStructure* Structure) {
-    fLocalNodesIDs[0] = Node1ID;
-    fLocalNodesIDs[1] = Node2ID;
-    fHinges[0] = Hinge1;
-    fHinges[1] = Hinge2;
+TElement::TElement(int Node0ID, int Node1ID, bool Hinge0, bool Hinge1,
+                   int MaterialID, TStructure* Structure) {
+    fLocalNodesIDs[0] = Node0ID;
+    fLocalNodesIDs[1] = Node1ID;
+    fHinges[0] = Hinge0;
+    fHinges[1] = Hinge1;
 	fMaterialID = MaterialID;
 	fStructure = Structure;
     fEquations[0] = -1;
@@ -46,23 +46,23 @@ int* const TElement::getLocalNodesIDs()
 	return fLocalNodesIDs;
 }
 
-// getNode1 - accesses the node1 of the element.
-int TElement::getNode1ID() const {
+// getNode0ID - accesses the ID of the element's Node 0.
+int TElement::getNode0ID() const {
     return fLocalNodesIDs[0];
 }
 
-// getNode2 - accesses the node1 of the element.
-int TElement::getNode2ID() const {
+// getNode1ID - accesses the ID of the element's Node 1.
+int TElement::getNode1ID() const {
     return fLocalNodesIDs[1];
 }
 
-// getHinge1 - accesses the left hinge of the element.
-bool TElement::getHinge1() const {
+// getHinge0 - accesses the hinge of the element at Node 0.
+bool TElement::getHinge0() const {
     return fHinges[0];
 }
 
-// getHinge2 - accesses the right hinge of the element.
-bool TElement::getHinge2() const {
+// getHinge1 - accesses the hinge of the element at Node 1.
+bool TElement::getHinge1() const {
     return fHinges[1];
 }
 
@@ -76,55 +76,55 @@ int* const TElement::getEquations() {
     return fEquations;
 }
 
-// getX1 - accesses the x1 coordinate of the element.
-double TElement::getX1() const {
+// getX0 - accesses the x coordinate of the element's Node 0.
+double TElement::getX0() const {
     TNode node = (*fStructure).getNodes()[fLocalNodesIDs[0]];
 	return node.getX();
 }
 
-// getY1 - accesses the y1 coordinate of the element.
-double TElement::getY1() const {
+// getY0 - accesses the y coordinate of the element's Node 0.
+double TElement::getY0() const {
     TNode node = (*fStructure).getNodes()[fLocalNodesIDs[0]];
     return node.getY();
 }
 
-// getX2 - accesses the x2 coordinate of the element.
-double TElement::getX2() const {
+// getX1 - accesses the x coordinate of the element's Node 1.
+double TElement::getX1() const {
     TNode node = (*fStructure).getNodes()[fLocalNodesIDs[1]];
 	return node.getX();
 }
 
-// getY2 - accesses the y2 coordinate of the element.
-double TElement::getY2() const {
+// getY1 - accesses the y coordinate of the element's Node 1.
+double TElement::getY1() const {
     TNode node = (*fStructure).getNodes()[fLocalNodesIDs[1]];
 	return node.getY();
 }
 
 // getL - accesses the element length.
 double TElement::getL() const {
-	double x1 = this->getX1();
+	double x0 = this->getX0();
+    double y0 = this->getY0();
+    double x1 = this->getX1();
     double y1 = this->getY1();
-    double x2 = this->getX2();
-    double y2 = this->getY2();
-    return(sqrt((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1)));
+    return(sqrt((x1 - x0)*(x1 - x0) + (y1 - y0)*(y1 - y0)));
 }
 
 // getCos - accesses the element cosine.
 double TElement::getCos() const {
-	double x1 = this->getX1();
-	double y1 = this->getY1();
-	double x2 = this->getX2();
-	double y2 = this->getY2();
-    return((x2 - x1) / sqrt((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1)));
+    double x0 = this->getX0();
+    double y0 = this->getY0();
+    double x1 = this->getX1();
+    double y1 = this->getY1();
+    return((x1 - x0) / sqrt((x1 - x0)*(x1 - x0) + (y1 - y0)*(y1 - y0)));
 }
 
 // getSin - accesses the element sine.
 double TElement::getSin() const {
-	double x1 = this->getX1();
-	double y1 = this->getY1();
-	double x2 = this->getX2();
-	double y2 = this->getY2();
-    return((y2 - y1) / sqrt((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1)));
+    double x0 = this->getX0();
+    double y0 = this->getY0();
+    double x1 = this->getX1();
+    double y1 = this->getY1();
+    return((y1 - y0) / sqrt((x1 - x0)*(x1 - x0) + (y1 - y0)*(y1 - y0)));
 }
 
 // getT - accesses the transformation matrix of the element.
@@ -211,16 +211,16 @@ void TElement::setLocalNodesIDs(int* NodesIDs) {
     fLocalNodesIDs[1] = NodesIDs[1];
 }
 
-// setNode1 - modifies the element node 1.
-void TElement::setNode1ID(const int& Node1ID) {
-	fLocalNodesIDs[0] = Node1ID;
+// setNode0ID - modifies the element's Node 0.
+void TElement::setNode0ID(int Node0ID) {
+	fLocalNodesIDs[0] = Node0ID;
 }
-// setNode2 - modifies the element node 2.
-void TElement::setNode2ID(const int& Node2ID) {
-    fLocalNodesIDs[1] = Node2ID;
+// setNode1ID - modifies the element's Node 1.
+void TElement::setNode1ID(int Node1ID) {
+    fLocalNodesIDs[1] = Node1ID;
 }
 // setMaterial - modifies the element material.
-void TElement::setMaterialID(const int& MaterialID) {
+void TElement::setMaterialID(int MaterialID) {
     fMaterialID = MaterialID;
 }
 
@@ -256,10 +256,10 @@ TElement& TElement::operator= (const TElement& E) {
 // Function that prints the element information.
 void TElement::print() {
 	std::cout << "Element Info: " << std::endl
-		<< " Node 1: " << fLocalNodesIDs[0] << std::endl
-		<< " Node 2: " << fLocalNodesIDs[1] << std::endl
-        << " Hinge 1: " << fHinges[0] << std::endl
-        << " Hinge 2: " << fHinges[1] << std::endl
+		<< " Node 0: " << fLocalNodesIDs[0] << std::endl
+		<< " Node 1: " << fLocalNodesIDs[1] << std::endl
+        << " Hinge 0: " << fHinges[0] << std::endl
+        << " Hinge 1: " << fHinges[1] << std::endl
 		<< " Material: " << fMaterialID << std::endl
 		<< " L: " << this->getL() << std::endl
 		<< " Cos: " << this->getCos() << std::endl

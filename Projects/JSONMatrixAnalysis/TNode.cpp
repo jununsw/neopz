@@ -1,5 +1,5 @@
 /* This file was created by Gustavo BATISTELA.
- It contains the definitions of functions of the TNode class.*/
+ It contains the definitions of functions of the TNode class. */
 
 #include "TNode.h"
 
@@ -57,7 +57,7 @@ TNode& TNode::operator= (const TNode& N) {
 // Function that prints the node information.
 void TNode::print() {
     std::cout << "Node Info:" << std::endl
-		<< " X: " << this->getX() << std::endl
-		<< " Y: " << this->getY() << std::endl;
+		<< " X: " << fCoordinates[0] << std::endl
+		<< " Y: " << fCoordinates[1] << std::endl;
     std::cout << std::flush;
 }

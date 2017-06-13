@@ -1,6 +1,6 @@
-/* This file was created by Gustavo ALCALA BATISTELA.
+/* This file was created by Gustavo BATISTELA.
 It is a header file containing the definition of the TStructure class
-and the declaration of its members.*/
+and the declaration of its members. */
 
 #ifndef TSTRUCTURE_H
 #define TSTRUCTURE_H

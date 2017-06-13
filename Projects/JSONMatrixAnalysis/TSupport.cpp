@@ -1,15 +1,15 @@
 /* This file was created by Gustavo BATISTELA.
- It contains the definitions of functions of the TSupport class.*/
+ It contains the definitions of functions of the TSupport class. */
 
 #include "TSupport.h"
 #include "TStructure.h"
 
 // Default constructor.
-TSupport::TSupport(const bool Fx, const bool Fy, const bool Mx, 
+TSupport::TSupport(const bool Fx, const bool Fy, const bool M,
 	const int NodeID, TStructure* Structure) {
     fConditions[0] = Fx;
     fConditions[1] = Fy;
-    fConditions[2] = Mx;
+    fConditions[2] = M;
     fNodeID = NodeID;
     fStructure = Structure;
 }
@@ -34,8 +34,8 @@ bool TSupport::getFx() const {
 bool TSupport::getFy() const {
 	return fConditions[1];
 }
-// getMx - accesses the Mx DOF of the support.
-bool TSupport::getMx() const {
+// getM - accesses the M DOF of the support.
+bool TSupport::getM() const {
     return fConditions[2];
 }
 // getConditions - accesses the vector of support conditions.
@@ -55,9 +55,9 @@ void TSupport::setFx(const bool Fx) {
 void TSupport::setFy(const bool Fy) {
     fConditions[1] = Fy;
 }
-// setMx - modifies the Mx DOF of the support.
-void TSupport::setMx(const bool Mx) {
-    fConditions[1] = Mx;
+// setM - modifies the M DOF of the support.
+void TSupport::setM(const bool M) {
+    fConditions[1] = M;
 }
 // setNode - modifies the node of the support.
 void TSupport::setNodeID(const int NodeID) {
@@ -79,9 +79,9 @@ TSupport& TSupport::operator= (const TSupport& S) {
 // Function that prints the support information.
 void TSupport::print() {
 	std::cout << "Support Info: " << std::endl
-		<< " Fx: " << this->getFx() << std::endl
-		<< " Fy: " << this->getFy() << std::endl
-		<< " Mx: " << this->getMx() << std::endl
-		<< " Node ID: " << this->getNodeID() << std::endl;
+		<< " Fx: " << fConditions[0] << std::endl
+		<< " Fy: " << fConditions[1] << std::endl
+		<< " M: " << fConditions[2] << std::endl
+		<< " Node ID: " << fNodeID << std::endl;
     std::cout << std::flush;
 }
