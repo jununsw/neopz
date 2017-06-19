@@ -1,8 +1,8 @@
 //
-//  main-H1-Hdiv.cpp
+//  main-ZigZagMesh.cpp
 //  PZ
 //
-//  Created by Agnaldo Farias on 17/03/15.
+//  Created by Agnaldo Farias on 24/01/17.
 //
 //
 
@@ -23,6 +23,7 @@
 #include "pzgeoelside.h"
 #include "TPZGeoLinear.h"
 #include "pzgeopoint.h"
+#include "TPZGeoCube.h"
 
 #include "TPZRefPattern.h"
 #include "tpzgeoelrefpattern.h"
@@ -68,9 +69,9 @@
 #include "TPZParFrontStructMatrix.h"
 
 
-#ifdef LOG4CXX
-static LoggerPtr logger(Logger::getLogger("pz.multiphysics"));
-#endif
+//#ifdef LOG4CXX
+//static LoggerPtr logger(Logger::getLogger("pz.multiphysics"));
+//#endif
 
 using namespace std;
 
@@ -82,11 +83,17 @@ const int bc0 = -1;
 const int bc1 = -2;
 const int bc2 = -3;
 const int bc3 = -4;
+int const bc4 = -5;
+int const bc5 = -6;
 
-bool fTriang = false;
+
+bool fTriang = true;
 
 TPZGeoMesh *MalhaGeom(int nelx, int nely, REAL Lx, REAL Ly,bool ftriang, bool zigzag);
-TPZGeoMesh *MalhaGeomTeste();
+TPZGeoMesh *CreateOneCubo(int ndiv);
+TPZGeoMesh * CreateOneCuboWithTetraedrons(int ndiv);
+void GenerateNodes(TPZGeoMesh *gmesh, long nelem);
+bool MyDoubleComparer(REAL a, REAL b);
 
 
 TPZCompMesh *CMeshFlux(int pOrder,TPZGeoMesh *gmesh);
@@ -104,23 +111,32 @@ void SaidaSolucao(TPZAnalysis &an, std::string plotfile);
 void ErrorHDiv2(TPZCompMesh *hdivmesh, std::ostream &out, TPZVec<STATE> &errorHDiv);
 void ErrorH1(TPZCompMesh *l2mesh, std::ostream &out, STATE &errorL2);
 
-void SolProblema(const TPZVec<REAL> &pt, TPZVec<STATE> &p, TPZFMatrix<STATE> &flux);
-void ForcingTang2(const TPZVec<REAL> &pt, TPZVec<STATE> &disp);
+void SolProblema(const TPZVec<REAL> &pt, TPZVec<STATE> &u, TPZFMatrix<STATE> &flux);
+void ForcingF(const TPZVec<REAL> &pt, TPZVec<STATE> &res);
 void ForcingTang3(const TPZVec<REAL> &pt, TPZVec<STATE> &res,TPZFMatrix<STATE> &disp);
+void Dirichlet(const TPZVec<REAL> &loc, TPZVec<STATE> &result);
+void NeumannAcima(const TPZVec<REAL> &loc, TPZVec<STATE> &result);
+void NeumannBC2(const TPZVec<REAL> &loc, TPZVec<STATE> &result);
 
 
 void ChangeSideConnectOrderConnects(TPZCompMesh *mesh, int sideorder);
 void ChangeInternalOrderH1(TPZCompMesh *mesh, int neworder);
 void NEquationsCondensed(TPZCompMesh *cmesh, long &neqglob,long &neqcond, bool ismisto);
+void ChangeInternalConnectOrder(TPZCompMesh *mesh, int addToOrder);
+
+void PermeabilityTensor(const TPZVec<REAL> &pt,TPZVec<STATE> &kabs,TPZFMatrix<STATE> &tensorK);
+void ReactionTerm(const TPZVec<REAL> &pt,TPZVec<STATE> &alpha,TPZFMatrix<STATE> &disp);
 
 bool metodomisto;
-bool solsuave;
-int main3()
+bool solArcTan;
+bool problema3D;
+
+int main()
 {
     HDivPiola = 1;
-    bool SecondIntegration=false;
+    bool SecondIntegration = false;
     
-    InitializePZLOG();
+    //InitializePZLOG();
     gRefDBase.InitializeUniformRefPattern(EOned);
     gRefDBase.InitializeUniformRefPattern(EQuadrilateral);
     gRefDBase.InitializeUniformRefPattern(ETriangle);
@@ -128,64 +144,79 @@ int main3()
     TPZVec<REAL> erros;
     
     metodomisto = true; //false --> formulacao H1
-    solsuave = true;
+    solArcTan = true; //false --> ploblema 2D tese Margui
+    problema3D = false;
+    bool zigzag = false;
+    bool HDivMaisMais = false;
+    int nmais = 0;
+
     
     ofstream saidaerrosHdiv("../Erro-Misto.txt");
     ofstream saidaerrosH1("../Erro-H1.txt");
     
+    int maxp = 5;
+    int maxhref = 6;
+    TPZFMatrix<STATE> L2ErrorPrimal(maxhref,maxp-1,0.);
+    TPZFMatrix<STATE> L2ErrorDual(maxhref,maxp-1,0.);
+    TPZFMatrix<STATE> L2ErrorDiv(maxhref,maxp-1,0.);
+    TPZFMatrix<STATE> HDivErrorDual(maxhref,maxp-1,0.);
     
-    int maxp = 4;
-    int maxhref = 1;
-    TPZFMatrix<STATE> L2ErrorPrimal(maxhref,maxp-1);
-    TPZFMatrix<STATE> L2ErrorDual(maxhref,maxp-1);
-    TPZFMatrix<STATE> L2ErrorDiv(maxhref,maxp-1);
-    TPZFMatrix<STATE> HDivErrorDual(maxhref,maxp-1);
+    TPZFMatrix<STATE> L2ConvergPrimal(maxhref-1,maxp-1,0.);
+    TPZFMatrix<STATE> L2ConvergDual(maxhref-1,maxp-1,0.);
+    TPZFMatrix<STATE> L2ConvergDiv(maxhref-1,maxp-1,0.);
+    TPZFMatrix<STATE> HDivConverg(maxhref-1,maxp-1,0.);
     
-    TPZFMatrix<STATE> L2ConvergPrimal(maxhref-1,maxp-1);
-    TPZFMatrix<STATE> L2ConvergDual(maxhref-1,maxp-1);
-    TPZFMatrix<STATE> L2ConvergDiv(maxhref-1,maxp-1);
-    TPZFMatrix<STATE> HDivConverg(maxhref-1,maxp-1);
+    TPZFMatrix<int> porders(maxhref,maxp-1,0.);
+    TPZFMatrix<int> numhref(maxhref,maxp-1,0.);
+    TPZFMatrix<int> DofTotal(maxhref,maxp-1,0.);
+    TPZFMatrix<int> DofCond(maxhref,maxp-1,0.);
     
-    TPZFMatrix<int> porders(maxhref,maxp-1);
-    TPZFMatrix<int> numhref(maxhref,maxp-1);
     int nelx = 1;
     int nely = 1;
-    bool zigzag = false;
     
+    TPZGeoMesh * gmesh;
     for(int p = 1; p<maxp; p++)
     {
         int pq = p;
-        int pp = p;
-        int order_reduce = 0;
-        
-        if (order_reduce==1){
-            pq+=1;
-            pp+=1;
+        int pp = p-1;
+        if(HDivMaisMais){
+            pp = p + nmais;//Aqui = comeca com 1
         }
-        
+
         //refinamentos h adptativos
         for(int nref = 0; nref<maxhref; nref++){
             
             if(metodomisto==true){
                 saidaerrosHdiv<< "Saida do erro para formulacão hdiv, com ordem p = " << p << "\n";
                 if (zigzag) {
-                    saidaerrosHdiv << "Malha irregular - ZigZag\n";
+                    saidaerrosHdiv << "Malha irregular - Trapezoidal\n";
                 }
             }
             else{
                 saidaerrosH1<< "Saida do erro para formulacão H1, com ordem p  = " << p << "\n";
                 if (zigzag) {
-                    saidaerrosH1 << "Malha irregular - ZigZag\n";
+                    saidaerrosH1 << "Malha irregular - Trapezoidal\n";
                 }
             }
             
             nelx = 1 << nref;
             nely = 1 << nref;
-            TPZGeoMesh * gmesh = MalhaGeom(nelx, nely, 1,1,fTriang,zigzag);
-            //            UniformRefine2(gmesh, nref);
+            if(problema3D)
             {
-                ofstream filemesh1("malhageometrica.txt");
-                gmesh->Print(filemesh1);
+                //gmesh = CreateOneCubo(nref);
+                gmesh = CreateOneCuboWithTetraedrons(nref);
+                //UniformRefine2(gmesh, nref);
+            }
+            else
+            {
+                gmesh = MalhaGeom(nelx, nely, 1,1,fTriang,zigzag);
+            }
+           
+            {
+//                ofstream filemesh1("malhageometrica.txt");
+//                gmesh->Print(filemesh1);
+//                std::ofstream filemesh("MalhaGeometricaInicial.vtk");
+//                TPZVTKGeoMesh::PrintGMeshVTK(gmesh,filemesh, true);
             }
             
             //rodar formulacao mista
@@ -193,31 +224,27 @@ int main3()
                 
                 // Criando a primeira malha computacional
                 TPZCompMesh * cmesh1= CMeshFlux(pq, gmesh);
+//                {
+//                    ofstream filemesh2("MalhaFlux.txt");
+//                    filemesh2<<"\nDOF HDiv: "<< cmesh1->NEquations()<<std::endl;
+//                    cmesh1->Print(filemesh2);
+//                }
+                
+                if(HDivMaisMais)
                 {
-                    ofstream filemesh2("MalhaFluxAntes.txt");
-                    filemesh2<<"\nDOF HDiv: "<< cmesh1->NEquations()<<std::endl;
-                    cmesh1->Print(filemesh2);
+                    ChangeInternalConnectOrder(cmesh1, nmais);
+//                    ofstream filemesh2("MalhaFlux.txt");
+//                    filemesh2<<"\nDOF HDiv++: "<< cmesh1->NEquations()<<std::endl;
+//                    cmesh1->Print(filemesh2);
                 }
-                
-                //HDiv++
-                if(order_reduce == 1){
-                    ChangeSideConnectOrderConnects(cmesh1,pq-order_reduce);
-                    
-                    ofstream filemesh2("MalhaFluxDepois.txt");
-                    filemesh2<<"\nDOF HDiv++: "<< cmesh1->NEquations()<<std::endl;
-                    cmesh1->Print(filemesh2);
-                }
-                
-                
                 
                 // Criando a segunda malha computacional
                 TPZCompMesh * cmesh2 = CMeshPressure(pp, gmesh);
-                {
-                    ofstream filemesh3("MalhaPressao.txt");
-                    filemesh3<<"\nDOF Pressao: "<< cmesh2->NEquations()<<std::endl;
-                    cmesh2->Print(filemesh3);
-                    
-                }
+//                {
+//                    ofstream filemesh3("MalhaPressao.txt");
+//                    filemesh3<<"\nDOF Pressao: "<< cmesh2->NEquations()<<std::endl;
+//                    cmesh2->Print(filemesh3);
+//                }
 
                 
                 // Criando a malha computacional multifísica
@@ -233,10 +260,10 @@ int main3()
                 int nDofCondensed;
                 nDofCondensed = mphysics->NEquations();
                 
-                ofstream filemesh4("MalhaMultifisica.txt");
-                filemesh4<<"\nDOF Total Multifisica: "<< nDofTotal<<std::endl;
-                filemesh4<<"DOF Condensados Multifisica: "<< nDofCondensed <<std::endl;
-                mphysics->Print(filemesh4);
+//                ofstream filemesh4("MalhaMultifisica.txt");
+//                filemesh4<<"\nDOF Total Multifisica: "<< nDofTotal<<std::endl;
+//                filemesh4<<"DOF Condensados Multifisica: "<< nDofCondensed <<std::endl;
+//                mphysics->Print(filemesh4);
                 
                 saidaerrosHdiv<< "NRefinamento h  = "<< nref <<std::endl;
                 saidaerrosHdiv<< "Grau de Liberdade Total = " << nDofTotal<<std::endl;
@@ -244,7 +271,7 @@ int main3()
                 
                 // Resolvendo o sistema linear
                 TPZAnalysis an(mphysics);
-                ResolverSistema(an, mphysics,0);
+                ResolverSistema(an, mphysics,6);
                 
                 //            ofstream filemesh4("MalhaMultifisica.txt");
                 //            mphysics->Print(filemesh4);
@@ -252,8 +279,11 @@ int main3()
                 TPZBuildMultiphysicsMesh::TransferFromMultiPhysics(meshvec, mphysics);
                 
                 //Arquivo de saida para plotar a solução
-                string plotfile("../Solution_Hdiv.vtk");
-                SaidaSolucao(an, plotfile);
+                if(p==1)
+                {
+                    string plotfile("../Solution_Hdiv.vtk");
+                    SaidaSolucao(an, plotfile);
+                }
                 
                 STATE errorPrimalL2;
                 TPZVec<STATE> errorsHDiv;
@@ -270,6 +300,8 @@ int main3()
                 HDivErrorDual(nref,p-1) = errorsHDiv[2];
                 porders(nref,p-1) = p;
                 numhref(nref,p-1) = nref;
+                DofTotal(nref,p-1) = nDofTotal;
+                DofCond(nref,p-1) = nDofCondensed;
             }
             else{
                 
@@ -348,6 +380,8 @@ int main3()
         
         porders.Print("porder = ",errtable);
         numhref.Print("numhref = ",errtable);
+        DofTotal.Print("DOF Total = ",errtable);
+        DofCond.Print("DOF Condesed = ",errtable);
     }
     std::cout << "Finished." << std::endl;
     return EXIT_SUCCESS;
@@ -377,26 +411,26 @@ TPZGeoMesh *MalhaGeom(int nelx, int nely, REAL Lx, REAL Ly,bool ftriang, bool zi
         gengrid.SetElementType(ETriangle);
     }
     if (zigzag) {
-        gengrid.SetDistortion(0.3);
+        gengrid.SetDistortion(0.25);
         //        gengrid.SetZigZagPattern();
     }
 //    gengrid.SetDistortion(0.75);
     gengrid.Read(gmesh);
     x1[0] = Lx;
     x1[1] = 0.;
-    gengrid.SetBC(gmesh, x0, x1, bc0);
-    x0 = x1;
-    x1[0] = Lx;
-    x1[1] = Ly;
     gengrid.SetBC(gmesh, x0, x1, bc1);
     x0 = x1;
-    x1[0] = 0.;
+    x1[0] = Lx;
     x1[1] = Ly;
     gengrid.SetBC(gmesh, x0, x1, bc2);
     x0 = x1;
     x1[0] = 0.;
-    x1[1] = 0.;
+    x1[1] = Ly;
     gengrid.SetBC(gmesh, x0, x1, bc3);
+    x0 = x1;
+    x1[0] = 0.;
+    x1[1] = 0.;
+    gengrid.SetBC(gmesh, x0, x1, bc4);
     
     
 //    REAL theta = 0.0;
@@ -574,15 +608,15 @@ TPZGeoMesh *MalhaGeom(int nelx, int nely, REAL Lx, REAL Ly,bool ftriang, bool zi
  
 */
     
-#ifdef LOG4CXX
-    if(logger->isDebugEnabled())
-    {
-        std::stringstream sout;
-        sout<<"Malha Geometrica Inicial\n";
-        gmesh->Print(sout);
-        LOGPZ_DEBUG(logger,sout.str())
-    }
-#endif
+//#ifdef LOG4CXX
+//    if(logger->isDebugEnabled())
+//    {
+//        std::stringstream sout;
+//        sout<<"Malha Geometrica Inicial\n";
+//        gmesh->Print(sout);
+//        LOGPZ_DEBUG(logger,sout.str())
+//    }
+//#endif
     
     return gmesh;
 }
@@ -591,7 +625,8 @@ TPZGeoMesh *MalhaGeom(int nelx, int nely, REAL Lx, REAL Ly,bool ftriang, bool zi
 TPZCompMesh *CMeshFlux(int pOrder,TPZGeoMesh *gmesh)
 {
     /// criar materiais
-    int dim = 2;
+    int dim =gmesh->Dimension();
+    
     TPZMatPoisson3d *material;
     material = new TPZMatPoisson3d(matId,dim);
     TPZMaterial * mat(material);
@@ -601,23 +636,35 @@ TPZCompMesh *CMeshFlux(int pOrder,TPZGeoMesh *gmesh)
     TPZCompMesh * cmesh = new TPZCompMesh(gmesh);
     cmesh->SetDimModel(dim);
     
-    //cmesh->SetAllCreateFunctionsHDiv();
-    cmesh->SetAllCreateFunctionsHDivFull();
+    cmesh->SetAllCreateFunctionsHDiv();
+    //cmesh->SetAllCreateFunctionsHDivFull();
     
     cmesh->InsertMaterialObject(mat);
     
     ///Criar condicoes de contorno
     TPZFMatrix<STATE> val1(2,2,0.), val2(2,1,0.);
-    TPZMaterial * BCond0 = material->CreateBC(mat, bc0, bcdirichlet, val1, val2);
     TPZMaterial * BCond1 = material->CreateBC(mat, bc1, bcdirichlet, val1, val2);
     TPZMaterial * BCond2 = material->CreateBC(mat, bc2, bcdirichlet, val1, val2);
     TPZMaterial * BCond3 = material->CreateBC(mat, bc3, bcdirichlet, val1, val2);
+    TPZMaterial * BCond4 = material->CreateBC(mat, bc4, bcdirichlet, val1, val2);
     
     ///Inserir condicoes de contorno
-    cmesh->InsertMaterialObject(BCond0);
     cmesh->InsertMaterialObject(BCond1);
     cmesh->InsertMaterialObject(BCond2);
     cmesh->InsertMaterialObject(BCond3);
+    cmesh->InsertMaterialObject(BCond4);
+    
+    if(problema3D)
+    {
+        //bc0
+        TPZMaterial * BCond4 = material->CreateBC(mat, bc0, bcdirichlet, val1, val2);
+        cmesh->InsertMaterialObject(BCond4);
+        
+        //bc5
+        TPZMaterial * BCond5 = material->CreateBC(mat, bc5, bcdirichlet, val1, val2);
+        cmesh->InsertMaterialObject(BCond5);
+    }
+
     
     cmesh->SetDefaultOrder(pOrder);
     cmesh->SetDimModel(dim);
@@ -646,7 +693,7 @@ TPZCompMesh *CMeshFlux(int pOrder,TPZGeoMesh *gmesh)
 TPZCompMesh *CMeshPressure(int pOrder,TPZGeoMesh *gmesh)
 {
     /// criar materiais
-    int dim = 2;
+    int dim =gmesh->Dimension();
     TPZMatPoisson3d *material;
     material = new TPZMatPoisson3d(matId,dim);
     material->NStateVariables();
@@ -792,7 +839,7 @@ TPZCompMesh *MalhaCompMultifisica(TPZVec<TPZCompMesh *> meshvec,TPZGeoMesh * gme
     TPZCompMesh *mphysics = new TPZCompMesh(gmesh);
     
     //criando material
-    int dim =2;
+    int dim =gmesh->Dimension();
     
     TPZMatMixedPoisson3D *material = new TPZMatMixedPoisson3D(matId,dim);
     
@@ -807,22 +854,40 @@ TPZCompMesh *MalhaCompMultifisica(TPZVec<TPZCompMesh *> meshvec,TPZGeoMesh * gme
     material->SetViscosity(coefvisc);
     
     //permeabilidade
-    TPZFMatrix<REAL> Ktensor(3,3,0.);
-    TPZFMatrix<REAL> InvK(3,3,0.);
-    Ktensor(0,0)=1.; Ktensor(1,1)=1.;
+    TPZFMatrix<REAL> Ktensor(dim,dim,0.);
+    TPZFMatrix<REAL> InvK(dim,dim,0.);
+    
+    for(int i=0; i<dim; i++){
+        Ktensor(i,i)=1.;
+    }
+    
     InvK=Ktensor;
     material->SetPermeabilityTensor(Ktensor,InvK);
     
+    if(problema3D==false && solArcTan==false)
+    {
+        //permeabilidade
+        TPZAutoPointer<TPZFunction<STATE> > tensorK;
+        tensorK = new TPZDummyFunction<STATE>(PermeabilityTensor);
+        material->SetPermeabilityFunction(tensorK);
+        
+        //Termo de reacao: alpha*p
+        material->SetReactionTerm(1.);
+        TPZAutoPointer<TPZFunction<STATE> > reaction;
+        reaction = new TPZDummyFunction<STATE>(ReactionTerm);
+        material->SetfReactionTermFunction(reaction);
+    }
     //solucao exata
     TPZAutoPointer<TPZFunction<STATE> > solexata;
     solexata = new TPZDummyFunction<STATE>(SolProblema);
     material->SetForcingFunctionExact(solexata);
     
+    int int_order = 10;
     //funcao do lado direito da equacao do problema
     TPZAutoPointer<TPZFunction<STATE> > force;
     TPZDummyFunction<STATE> *dum;
-    dum = new TPZDummyFunction<STATE>(ForcingTang2);
-    dum->SetPolynomialOrder(10);
+    dum = new TPZDummyFunction<STATE>(ForcingF);
+    dum->SetPolynomialOrder(int_order);
     force = dum;
     material->SetForcingFunction(force);
     
@@ -833,19 +898,126 @@ TPZCompMesh *MalhaCompMultifisica(TPZVec<TPZCompMesh *> meshvec,TPZGeoMesh * gme
     
     //Criando condicoes de contorno
     TPZFMatrix<STATE> val1(2,2,0.), val2(2,1,0.);
+
+    if(problema3D)
+    {
+        //bc1
+        TPZMaterial *bnd = mat->CreateBC(mat, bc1, 0, val1, val2);
+        TPZAutoPointer<TPZFunction<STATE> > bc1exata;
+        TPZDummyFunction<STATE> *dum1;
+        dum1 = new TPZDummyFunction<STATE>(Dirichlet);//NeumannBC1
+        dum1->SetPolynomialOrder(int_order);
+        bc1exata = dum1;
+        bnd->SetForcingFunction(bc1exata);
+        mphysics->InsertMaterialObject(bnd);
+        
+        //bc2
+        bnd = mat->CreateBC (mat, bc2, 1, val1, val2);
+        TPZAutoPointer<TPZFunction<STATE> > bc2exata;
+        TPZDummyFunction<STATE> *dum2;
+        dum2 = new TPZDummyFunction<STATE>(NeumannBC2);//NeumannBC2
+        dum2->SetPolynomialOrder(int_order);
+        bc2exata = dum2;
+        bnd->SetForcingFunction(bc2exata);
+        mphysics->InsertMaterialObject(bnd);
+        
+        //bc3
+        bnd = mat->CreateBC (mat, bc3, 0, val1, val2);
+        TPZAutoPointer<TPZFunction<STATE> > bc3exata;
+        TPZDummyFunction<STATE> *dum3;
+        dum3 = new TPZDummyFunction<STATE>(Dirichlet);
+        dum3->SetPolynomialOrder(int_order);
+        bc3exata = dum3;
+        bnd->SetForcingFunction(bc3exata);
+        mphysics->InsertMaterialObject(bnd);
+        
+        //bc4
+        bnd = mat->CreateBC (mat, bc4, 0, val1, val2);
+        TPZAutoPointer<TPZFunction<STATE> > bc4exata;
+        TPZDummyFunction<STATE> *dum4;
+        dum4 = new TPZDummyFunction<STATE>(Dirichlet);
+        dum4->SetPolynomialOrder(int_order);
+        bc4exata = dum4;
+        bnd->SetForcingFunction(bc4exata);
+        mphysics->InsertMaterialObject(bnd);
+        
+        //bc0
+        bnd = mat->CreateBC (mat, bc0, 0, val1, val2);
+        TPZAutoPointer<TPZFunction<STATE> > bc0exata;
+        TPZDummyFunction<STATE> *dum0;
+        dum0 = new TPZDummyFunction<STATE>(Dirichlet);
+        dum0->SetPolynomialOrder(int_order);
+        bc0exata = dum0;
+        bnd->SetForcingFunction(bc0exata);
+        mphysics->InsertMaterialObject(bnd);
+        
+        //bc5
+        bnd = mat->CreateBC (mat, bc5, 1, val1, val2);
+        TPZAutoPointer<TPZFunction<STATE> > bc5exata;
+        TPZDummyFunction<STATE> *dum5;
+        dum5 = new TPZDummyFunction<STATE>(NeumannAcima);//NeumannAcima
+        dum5->SetPolynomialOrder(int_order);
+        bc5exata = dum5;
+        bnd->SetForcingFunction(bc5exata);
+        mphysics->InsertMaterialObject(bnd);
+        
+    }
+    else if (solArcTan)
+    {
+        //bc1
+        TPZMaterial *bnd = mat->CreateBC(mat, bc1, 0, val1, val2);
+        TPZAutoPointer<TPZFunction<STATE> > bc1exata;
+        TPZDummyFunction<STATE> *dum1;
+        dum1 = new TPZDummyFunction<STATE>(Dirichlet);//NeumannBC1
+        dum1->SetPolynomialOrder(int_order);
+        bc1exata = dum1;
+        bnd->SetForcingFunction(bc1exata);
+        mphysics->InsertMaterialObject(bnd);
+        
+        //bc2
+        bnd = mat->CreateBC (mat, bc2, 1, val1, val2);
+        TPZAutoPointer<TPZFunction<STATE> > bc2exata;
+        TPZDummyFunction<STATE> *dum2;
+        dum2 = new TPZDummyFunction<STATE>(NeumannBC2);//NeumannBC2
+        dum2->SetPolynomialOrder(int_order);
+        bc2exata = dum2;
+        bnd->SetForcingFunction(bc2exata);
+        mphysics->InsertMaterialObject(bnd);
+        
+        //bc3
+        bnd = mat->CreateBC (mat, bc3, 0, val1, val2);
+        TPZAutoPointer<TPZFunction<STATE> > bc3exata;
+        TPZDummyFunction<STATE> *dum3;
+        dum3 = new TPZDummyFunction<STATE>(Dirichlet);
+        dum3->SetPolynomialOrder(int_order);
+        bc3exata = dum3;
+        bnd->SetForcingFunction(bc3exata);
+        mphysics->InsertMaterialObject(bnd);
+        
+        //bc4
+        bnd = mat->CreateBC (mat, bc4, 0, val1, val2);
+        TPZAutoPointer<TPZFunction<STATE> > bc4exata;
+        TPZDummyFunction<STATE> *dum4;
+        dum4 = new TPZDummyFunction<STATE>(Dirichlet);
+        dum4->SetPolynomialOrder(int_order);
+        bc4exata = dum4;
+        bnd->SetForcingFunction(bc4exata);
+        mphysics->InsertMaterialObject(bnd);
+    }
+    else
+    {
+        TPZMaterial * BCond0 = material->CreateBC(mat, bc1, bcdirichlet, val1, val2);
+        TPZMaterial * BCond1 = material->CreateBC(mat, bc2, bcdirichlet, val1, val2);
+        TPZMaterial * BCond2 = material->CreateBC(mat, bc3, bcdirichlet, val1, val2);
+        TPZMaterial * BCond3 = material->CreateBC(mat, bc4, bcdirichlet, val1, val2);
     
-    
-    TPZMaterial * BCond0 = material->CreateBC(mat, bc0, bcdirichlet, val1, val2);
-    TPZMaterial * BCond1 = material->CreateBC(mat, bc1, bcdirichlet, val1, val2);
-    TPZMaterial * BCond2 = material->CreateBC(mat, bc2, bcdirichlet, val1, val2);
-    TPZMaterial * BCond3 = material->CreateBC(mat, bc3, bcdirichlet, val1, val2);
-    
-    ///Inserir condicoes de contorno
-    mphysics->InsertMaterialObject(BCond0);
-    mphysics->InsertMaterialObject(BCond1);
-    mphysics->InsertMaterialObject(BCond2);
-    mphysics->InsertMaterialObject(BCond3);
-    
+        ///Inserir condicoes de contorno
+        mphysics->InsertMaterialObject(BCond0);
+        mphysics->InsertMaterialObject(BCond1);
+        mphysics->InsertMaterialObject(BCond2);
+        mphysics->InsertMaterialObject(BCond3);
+    }
+          
     mphysics->SetAllCreateFunctionsMultiphysicElem();
     
     //Fazendo auto build
@@ -990,10 +1162,11 @@ TPZCompMesh *MalhaCompMultifisica(TPZVec<TPZCompMesh *> meshvec,TPZGeoMesh * gme
 #define VTK
 void ResolverSistema(TPZAnalysis &an, TPZCompMesh *fCmesh, int numthreads)
 {
-   TPZSkylineStructMatrix strmat(fCmesh);
+   //TPZSkylineStructMatrix strmat(fCmesh);
     
-//    TPZParFrontStructMatrix<TPZFrontSym<STATE> > strmat(fCmesh);
-//    strmat.SetDecomposeType(ELDLt);
+    TPZParFrontStructMatrix<TPZFrontSym<STATE> > strmat(fCmesh);
+    strmat.SetDecomposeType(ELDLt);
+    
     
     if(numthreads>0){
         strmat.SetNumThreads(numthreads);
@@ -1015,18 +1188,19 @@ void ResolverSistema(TPZAnalysis &an, TPZCompMesh *fCmesh, int numthreads)
 
 void SaidaSolucao(TPZAnalysis &an, std::string plotfile){
     
-    if(metodomisto==true){
+    if(metodomisto==true)
+    {
         TPZManVector<std::string,10> scalnames(5), vecnames(2);
         scalnames[0] = "Pressure";
         scalnames[1] = "ExactPressure";
         scalnames[2]="POrder";
         vecnames[0]= "Flux";
         vecnames[1]= "ExactFlux";
-        
         scalnames[3] = "Divergence";
         scalnames[4] = "ExactDiv";
-        
-        const int dim = 2;
+      
+        const int dim = an.Mesh()->Dimension();
+
         int div = 0;
         an.DefineGraphMesh(dim,scalnames,vecnames,plotfile);
         an.PostProcess(div,dim);
@@ -1102,8 +1276,8 @@ void ErrorHDiv2(TPZCompMesh *hdivmesh, std::ostream &out, TPZVec<STATE> &errorHD
     errorHDiv[0] = sqrt(globerrors[1]);
     errorHDiv[1] = sqrt(globerrors[2]);
     errorHDiv[2] = sqrt(globerrors[3]);
-    //out << "L2 Norm for divergence = "    << sqrt(globerrors[2])  <<endl;
-    //out << "Hdiv Norm for flux = "    << sqrt(globerrors[3])  <<endl;
+    out << "L2 Norm for divergence = "    << sqrt(globerrors[2])  <<endl;
+    out << "Hdiv Norm for flux = "    << sqrt(globerrors[3])  <<endl;
     
 }
 
@@ -1127,13 +1301,13 @@ void ErrorH1(TPZCompMesh *l2mesh, std::ostream &out, STATE &errorL2)
         
         int nerr = elerror.size();
         globerrors.resize(nerr);
-#ifdef LOG4CXX
-        if (logger->isDebugEnabled()) {
-            std::stringstream sout;
-            sout << "L2 Error sq of element " << el << elerror[0]*elerror[0];
-            LOGPZ_DEBUG(logger, sout.str())
-        }
-#endif
+//#ifdef LOG4CXX
+//        if (logger->isDebugEnabled()) {
+//            std::stringstream sout;
+//            sout << "L2 Error sq of element " << el << elerror[0]*elerror[0];
+//            LOGPZ_DEBUG(logger, sout.str())
+//        }
+//#endif
         for (int i=0; i<nerr; i++) {
             globerrors[i] += elerror[i]*elerror[i];
         }
@@ -1166,108 +1340,297 @@ void UniformRefine2(TPZGeoMesh* gmesh, int nDiv)
 #define ArcTan atan
 #define Sqrt sqrt
 
-void SolProblema(const TPZVec<REAL> &pt, TPZVec<STATE> &p, TPZFMatrix<STATE> &flux){
+void SolProblema(const TPZVec<REAL> &pt, TPZVec<STATE> &u, TPZFMatrix<STATE> &flux){
     
     REAL x = pt[0];
     REAL y = pt[1];
+    REAL z = pt[2];
     
-    p[0]=0;
-    flux(0,0)=0.;
-    flux(1,0)=0.;
-    flux(2,0)=0.;
+    u.Resize(1, 0.);
+    flux.Resize(3, 1);
+    flux(0,0)=0., flux(1,0)=0., flux(2,0)=0.;
     
-    if(solsuave)
+    if(problema3D)
     {
-        p[0] = sin(M_PI*x)*sin(M_PI*y);
-        flux(0,0) = M_PI*cos(M_PI*x)*sin(M_PI*y);
-        flux(1,0) = M_PI*cos(M_PI*y)*sin(M_PI*x);
-        flux(2,0) = 2.*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y); //valor do divergente
+        flux.Resize(4, 1);
+        flux(3,0)=0.;
+        
+        REAL x0 = 1.25, y0 = -0.25, z0 = -0.25;
+        REAL r0 = M_PI/3.;
+        REAL alpha = 5.;
+        
+        REAL temp1;
+        REAL temp2;
+        REAL r;
+        REAL grad;
+        temp1 = 0.,temp2=0., r=0., grad=0.;
+        
+        //solucao u
+        temp1 = (x-x0)*(x-x0)+(y-y0)*(y-y0)+(z-z0)*(z-z0);
+        r = sqrt(temp1);
+        temp2 = (r - r0)*alpha;
+        u[0] = M_PI/2. - atan(temp2);
+        
+        //fluxo em x
+        temp2 =  r*(1./alpha + (r - r0)*(r - r0)*alpha);
+        temp1 = (x0-x);
+        grad=temp1/temp2;
+        if(metodomisto) grad *=-1.;
+        flux(0,0) = grad;
+        
+        //fluxo em y
+        temp1 = (y0-y);
+        grad=temp1/temp2;
+        if(metodomisto) grad *=-1.;
+        flux(1,0) = grad;
+        
+        
+        //fluxo em z
+        temp1 = (z0-z);
+        grad=temp1/temp2;
+        if(metodomisto) grad *=-1.;
+        flux(2,0) = grad;
+        
+        //Solucao do divergente de u
+        REAL temp3=0., temp4 = 0., div=0.;
+        temp1 = (x-x0)*(x-x0)+(y-y0)*(y-y0)+(z-z0)*(z-z0);
+        r = sqrt(temp1);
+        temp2 = (2./alpha) + 2.*r0*(r0-r)*alpha;
+        temp3 = r*((r - r0)*(r - r0) + 1./(alpha*alpha));
+        temp4 = 1. + (r - r0)*(r - r0)*alpha*alpha;
+        div = temp2/(temp3*temp4);
+        flux(3,0) = div; //valor do divergente
+    }
+    else if(solArcTan)
+    {
+        REAL x0 = 1.25, y0 = -0.25;
+        REAL r0 = M_PI/3.;
+        REAL alpha = 5.;
+        
+        REAL temp1;
+        REAL temp2;
+        REAL r;
+        REAL grad;
+        temp1 = 0.,temp2=0., r=0., grad=0.;
+        
+        //solucao u
+        temp1 = (x-x0)*(x-x0)+(y-y0)*(y-y0);
+        r = sqrt(temp1);
+        temp2 = (r - r0)*alpha;
+        u[0] = M_PI/2. - atan(temp2);
+        
+        //fluxo em x
+        temp2 =  r*(1./alpha + (r - r0)*(r - r0)*alpha);
+        temp1 = (x0-x);
+        grad=temp1/temp2;
+        if(metodomisto) grad *= -1.;
+        flux(0,0) = grad;
+        
+        //fluxo em y
+        temp1 = (y0-y);
+        grad=temp1/temp2;
+        if(metodomisto) grad *= -1.;
+        flux(1,0) = grad;
+        
+        //Solucao do divergente de u
+        REAL temp3=0., temp4 = 0., div=0.;
+        temp1 = (x-x0)*(x-x0)+(y-y0)*(y-y0);
+        r = sqrt(temp1);
+        temp2 = (1./alpha) + (r0*r0 - r*r)*alpha;
+        temp3 = r*((r - r0)*(r - r0) + 1./(alpha*alpha));
+        temp4 = 1. + (r - r0)*(r - r0)*alpha*alpha;
+        div = temp2/(temp3*temp4);
+        flux(2,0) = div; //valor do divergente
+
+//------- Solucao sin(pix)sin(piy) -----------
+//        u[0] = sin(M_PI*x)*sin(M_PI*y);
+//        flux(0,0) = M_PI*cos(M_PI*x)*sin(M_PI*y);
+//        flux(1,0) = M_PI*cos(M_PI*y)*sin(M_PI*x);
+//        flux(2,0) = 2.*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y); //valor do divergente
     }
     else
     {
-        REAL eps = 1000.;
-        REAL lambda = 50.;//frequencia
+        //Solucao u
+        REAL solp = sin(M_PI*x)*sin(M_PI*y);
+        u[0] = solp;
         
+        REAL temp = 1. + 10.*x;
         
-        REAL temp1 = (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5);
-        REAL temp2 = 1. + (2./M_PI)*ArcTan(Sqrt(eps)*1./16. - sqrt(eps)*temp1);
+        //fluxo em x
+        flux(0,0) = M_PI*temp*cos(M_PI*x)*sin(M_PI*y);
+        if(metodomisto) flux(0,0) *=-1.;
         
-        p[0] = 5.*x*(x - 1.)*y*(y - 1.)*(0.1*cos(lambda*M_PI*x)*cos(lambda*M_PI*y) + temp2);
+        //fluxo em y
+        flux(1,0) =  M_PI*temp*cos(M_PI*y)*sin(M_PI*x);
+        if(metodomisto) flux(1,0) *=-1.;
         
-        
-        //px
-        flux(0,0) = 5*(-1 + y)*y*(-0.6366197723675814*(-1. + x)*(-1.5707963267948966 + 1.*ArcTan(1.*Sqrt(eps)*(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2))) - 0.15707963267948966*cos(lambda*M_PI*x)*cos(lambda*M_PI*y)) - 0.6366197723675814*x*(-1.5707963267948966 + 1.*ArcTan(1.*Sqrt(eps)*(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2))) - 0.15707963267948966*cos(lambda*M_PI*x)*cos(lambda*M_PI*y)) + (-1 + x)*x*((Sqrt(eps)*(0.6366197723675814 - 1.2732395447351628*x))/(1 + eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2)) - 0.3141592653589793*lambda*cos(lambda*M_PI*y)*sin(lambda*M_PI*x)));
-        
-        
-        //py
-        flux(1,0) = 5*(-1 + x)*x*(-0.6366197723675814*(-1. + y)*(-1.5707963267948966 + 1.*ArcTan(1.*Sqrt(eps)*(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2))) - 0.15707963267948966*cos(lambda*M_PI*x)*cos(lambda*M_PI*y)) - 0.6366197723675814*y*(-1.5707963267948966 + 1.*ArcTan(1.*Sqrt(eps)*(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2))) - 0.15707963267948966*cos(lambda*M_PI*x)*cos(lambda*M_PI*y)) + (-1 + y)*y*((Sqrt(eps)*(0.6366197723675814 - 1.2732395447351628*y))/(1 + eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2)) - 0.3141592653589793*lambda*cos(lambda*M_PI*x)*sin(lambda*M_PI*y)));
-    }
-    
-    if(metodomisto){
-        flux(0,0) *=-1.;
-        flux(1,0) *=-1.;
+        //divergente: -(dux/dx + duy/dy)
+        flux(2,0) = -10.*M_PI*cos(M_PI*x)*sin(M_PI*y) + 2.*M_PI*M_PI*temp*sin(M_PI*x)*sin(M_PI*y);
     }
 }
 
 
-void ForcingTang2(const TPZVec<REAL> &pt, TPZVec<STATE> &disp){
-    
-    
-    
-//    REAL theta = 0.0;
-//    // It represents a 3D rotation around the z axis.
-//    TPZFMatrix<STATE> RotationMatrix(3,3,0.0);
-//    RotationMatrix(0,0) =   +cos(theta);
-//    RotationMatrix(0,1) =   -sin(theta);
-//    RotationMatrix(1,0) =   +sin(theta);
-//    RotationMatrix(1,1) =   +cos(theta);
-//    RotationMatrix(2,2) = 1.0;
-//    TPZVec<STATE> iCoords(3,0.0);
-//    TPZVec<STATE> iCoordsRotated(3,0.0);
-//    
-//    // Apply rotation
-//    iCoordsRotated[0] = RotationMatrix(0,0)*pt[0]+RotationMatrix(0,1)*pt[1]+RotationMatrix(0,2)*pt[2];
-//    iCoordsRotated[1] = RotationMatrix(1,0)*pt[0]+RotationMatrix(1,1)*pt[1]+RotationMatrix(1,2)*pt[2];
-//    iCoordsRotated[2] = RotationMatrix(2,0)*pt[0]+RotationMatrix(2,1)*pt[1]+RotationMatrix(2,2)*pt[2];
+void ForcingF(const TPZVec<REAL> &pt, TPZVec<STATE> &res){
     
     
     double x = pt[0];
     double y = pt[1];
-    disp[0] = 0.;
+    res[0] = 0.;
     
-    if(solsuave)
+    if(problema3D)
     {
-        disp[0] = 2.*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y);
+        REAL z = pt[2];
+        
+        REAL x0 = 1.25, y0 = -0.25, z0 = -0.25;
+        REAL r0 = M_PI/3.;
+        REAL alpha = 5.;
+        
+        REAL temp1=0., temp2=0.,temp3=0., temp4=0., r=0., sol=0.;
+        
+        temp1 = (x-x0)*(x-x0)+(y-y0)*(y-y0)+(z-z0)*(z-z0);
+        r = sqrt(temp1);
+        
+        temp2 = (2./alpha) + 2.*r0*(r0-r)*alpha;
+        temp3 = r*((r - r0)*(r - r0) + 1./(alpha*alpha));
+        temp4 = 1. + (r - r0)*(r - r0)*alpha*alpha;
+        
+        sol = temp2/(temp3*temp4);
+        
+        res[0] = sol;
+    }
+    else if(solArcTan)
+    {
+        REAL x0 = 1.25, y0 = -0.25;
+        REAL r0 = M_PI/3.;
+        REAL alpha = 5.;
+        
+        REAL temp1=0., temp2=0.,temp3=0., temp4=0., r=0., sol=0.;
+        
+        temp1 = (x-x0)*(x-x0)+(y-y0)*(y-y0);
+        r = sqrt(temp1);
+        
+        temp2 = (1./alpha) + (r0*r0 - r*r)*alpha;
+        temp3 = r*((r - r0)*(r - r0) + 1./(alpha*alpha));
+        temp4 = 1. + (r - r0)*(r - r0)*alpha*alpha;
+        
+        sol = temp2/(temp3*temp4);
+        res[0] = sol;
+
+//------- Solucao sin(pix)sin(piy) -----------
+//        res[0] = 2.*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y);
     }
     else
     {
-        REAL eps = 1000.;
-        REAL lambda = 50.;
+        REAL solp =  sin(M_PI*x)*sin(M_PI*y);
+        
+        REAL temp1 = 1. + 10.*x;
+        REAL temp2 = 1. - x*x - y*y;
+        REAL temp3 = exp(temp2);
 
-        disp[0]= 6.366197723675814*(-1. + y)*y*(-1.5707963267948966 + 1.*ArcTan(1.*Sqrt(eps)*(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2))) - 0.15707963267948966*cos(lambda*M_PI*x)*cos(lambda*M_PI*y)) - 5*(-1 + x)*x*(-1 + y)*y* ((4*Sqrt(eps)*(-1 + 4.*eps*Power(-0.5 + x,2)*(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2)) - 1.*eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2)))/(M_PI*Power(1 + eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2),2)) - 0.9869604401089358*Power(lambda,2)*cos(lambda*M_PI*x)*cos(lambda*M_PI*y)) - 2*(-5 + 10*x)*(-1 + y)*y*((Sqrt(eps)*(0.6366197723675814 - 1.2732395447351628*x))/(1 + eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2)) - 0.3141592653589793*lambda*cos(lambda*M_PI*y)*sin(lambda*M_PI*x)) - 5*(-1 + x)*x*(2. - 1.2732395447351628*ArcTan(1.*Sqrt(eps)*(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2))) + 0.19999999999999998*cos(lambda*M_PI*x)*cos(lambda*M_PI*y) + (-1 + y)*y* ((4*Sqrt(eps)*(-1 + 4.*eps*Power(-0.5 + y,2)*(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2)) - 1.*eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2)))/(M_PI*Power(1 + eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2),2)) - 0.9869604401089358*Power(lambda,2)*cos(lambda*M_PI*x)*cos(lambda*M_PI*y)) + 2*(-1 + 2*y)*((Sqrt(eps)*(0.6366197723675814 - 1.2732395447351628*y))/(1 + eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2)) - 0.3141592653589793*lambda*cos(lambda*M_PI*x)*sin(lambda*M_PI*y)));
+        res[0] = -10.*M_PI*cos(M_PI*x)*sin(M_PI*y) + (temp3 + 2.*M_PI*M_PI*temp1)*solp;
     }
 }
 
 void ForcingTang3(const TPZVec<REAL> &pt, TPZVec<STATE> &res,TPZFMatrix<STATE> &disp)
 {
-    double x = pt[0];
-    double y = pt[1];
-    res[0] = 0.;
+//    double x = pt[0];
+//    double y = pt[1];
+//    res[0] = 0.;
+//    
+//    if(solSinSin)
+//    {
+//        res[0] = 2.*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y);
+//    }
+//    else
+//    {
+//        REAL solp =  sin(M_PI*x)*sin(M_PI*y);
+//        
+//        REAL temp1 = 1. + 10.*x;
+//        REAL temp2 = 1. - x*x - y*y;
+//        REAL temp3 = exp(temp2);
+//        
+//        res[0] = -10.*M_PI*cos(M_PI*x)*sin(M_PI*y) + (temp3 + 2.*M_PI*M_PI*temp1)*solp;
+//    }
     
-    if(solsuave)
-    {
-        res[0] = 2.*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y);
-    }
-    else
-    {
-        REAL eps = 1000.;
-        REAL lambda = 50.;
-        
-        res[0]= 6.366197723675814*(-1. + y)*y*(-1.5707963267948966 + 1.*ArcTan(1.*Sqrt(eps)*(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2))) - 0.15707963267948966*cos(lambda*M_PI*x)*cos(lambda*M_PI*y)) - 5*(-1 + x)*x*(-1 + y)*y* ((4*Sqrt(eps)*(-1 + 4.*eps*Power(-0.5 + x,2)*(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2)) - 1.*eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2)))/(M_PI*Power(1 + eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2),2)) - 0.9869604401089358*Power(lambda,2)*cos(lambda*M_PI*x)*cos(lambda*M_PI*y)) - 2*(-5 + 10*x)*(-1 + y)*y*((Sqrt(eps)*(0.6366197723675814 - 1.2732395447351628*x))/(1 + eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2)) - 0.3141592653589793*lambda*cos(lambda*M_PI*y)*sin(lambda*M_PI*x)) - 5*(-1 + x)*x*(2. - 1.2732395447351628*ArcTan(1.*Sqrt(eps)*(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2))) + 0.19999999999999998*cos(lambda*M_PI*x)*cos(lambda*M_PI*y) + (-1 + y)*y* ((4*Sqrt(eps)*(-1 + 4.*eps*Power(-0.5 + y,2)*(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2)) - 1.*eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2)))/(M_PI*Power(1 + eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2),2)) - 0.9869604401089358*Power(lambda,2)*cos(lambda*M_PI*x)*cos(lambda*M_PI*y)) + 2*(-1 + 2*y)*((Sqrt(eps)*(0.6366197723675814 - 1.2732395447351628*y))/(1 + eps*Power(0.4375 - 1.*x + Power(x,2) - 1.*y + Power(y,2),2)) - 0.3141592653589793*lambda*cos(lambda*M_PI*x)*sin(lambda*M_PI*y)));
-    }
+    ForcingF(pt, res);
 
     res[0] *=-1.;
 }
+
+void Dirichlet(const TPZVec<REAL> &loc, TPZVec<STATE> &result)
+{
+    TPZFMatrix<STATE> du(3,1);
+    SolProblema(loc,result,du);
+}
+
+void NeumannBC2(const TPZVec<REAL> &loc, TPZVec<STATE> &result)
+{
+    REAL normal[3] = {1.,0.,0.};
+    TPZFNMatrix<5,STATE> du(3,1);
+    
+    SolProblema(loc,result,du);
+    
+    result.Resize(1);
+    if(problema3D)
+    {
+        result[0] = du(0,0)*normal[0]+du(1,0)*normal[1]+du(2,0)*normal[2];
+    }
+    else
+    {
+        result[0] = du(0,0)*normal[0]+du(1,0)*normal[1];
+    }
+}
+
+void NeumannAcima(const TPZVec<REAL> &loc, TPZVec<STATE> &result)
+{
+    REAL normal[3] = {0.,0.,1.};
+//    TPZManVector<REAL> u(1);
+    TPZFNMatrix<5,STATE> du(3,1);
+    
+    SolProblema(loc,result,du);
+    
+    result.Resize(1);
+    if(problema3D)
+    {
+        result[0] = du(0,0)*normal[0]+du(1,0)*normal[1]+du(2,0)*normal[2];
+    }
+    else
+    {
+        result[0] = du(0,0)*normal[0]+du(1,0)*normal[1];
+    }
+}
+
+
+void PermeabilityTensor(const TPZVec<REAL> &pt,TPZVec<STATE> &kabs,TPZFMatrix<STATE> &tensorK)
+{
+    
+    REAL x = pt[0];
+    //REAL y = pt[1];
+    tensorK.Resize(4,2);
+    kabs.Resize(1, 0.);
+    
+    //K
+    REAL temp = 1.+10.*x;
+    tensorK(0,0) = temp;     tensorK(0,1) = 0.0;
+    tensorK(1,0) = 0.0;      tensorK(1,1) = temp;
+    
+    //Kinv
+    tensorK(2,0) = 1.0/temp;     tensorK(2,1) = 0.0;
+    tensorK(3,0) = 0.0;          tensorK(3,1) = 1.0/temp;
+}
+
+void ReactionTerm(const TPZVec<REAL> &pt,TPZVec<STATE> &alpha,TPZFMatrix<STATE> &disp)
+{
+    REAL x = pt[0];
+    REAL y = pt[1];
+    disp.Resize(2,2);
+    alpha.Resize(1, 0.);
+    
+    //Termo de reacao
+    REAL temp = 1. - x*x - y*y;
+    alpha = exp(temp);
+}
+
 
 //void ChangeExternalOrderConnects(TPZCompMesh *mesh){
 //    
@@ -1439,3 +1802,428 @@ void NEquationsCondensed(TPZCompMesh *cmesh, long &neqglob,long &neqcond, bool i
         neqcond = neqcond - nel2D;
     }
 }
+
+void ChangeInternalConnectOrder(TPZCompMesh *mesh, int addToOrder){
+    
+    int nEl= mesh-> NElements();
+    int dim = mesh->Dimension();
+    
+    for (int iel=0; iel<nEl; iel++) {
+        TPZCompEl *cel = mesh->ElementVec()[iel];
+        if (!cel) continue;
+        int ncon = cel->NConnects();
+        int corder = 0;
+        int nshape = 0;
+        int nshape2 = 0;
+        
+        if(cel->Dimension()== dim)
+        {
+            TPZConnect &conel = cel->Connect(ncon-1);
+            corder = conel.Order();
+            nshape = conel.NShape();
+            
+            int neworder = corder + addToOrder;//Aqui = +1
+            long cindex = cel->ConnectIndex(ncon-1);
+            conel.SetOrder(neworder,cindex);
+            
+            TPZInterpolationSpace *intel = dynamic_cast<TPZInterpolationSpace *>(cel);
+            intel->SetPreferredOrder(neworder);
+            nshape = intel->NConnectShapeF(ncon-1,neworder);
+            
+            if(dim==2 && addToOrder==1)
+            {
+                if(fTriang){
+                    nshape2 = (corder + 2)*(corder + 2)-1;
+                }else{//Quadrilateral
+                    nshape2 = 2*(corder + 1)*(corder + 2);
+                }
+                if(nshape2!=nshape)
+                {
+                    DebugStop();
+                }
+            }
+            
+            conel.SetNShape(nshape);
+            mesh->Block().Set(conel.SequenceNumber(),nshape);
+        }
+    }
+    mesh->CleanUpUnconnectedNodes();
+    mesh->ExpandSolution();
+}
+
+
+TPZGeoMesh *CreateOneCubo(int ndiv)
+{
+    TPZGeoMesh *gmesh = new TPZGeoMesh;
+    int nnodes = 8;
+    
+    gmesh->SetDimension(3);
+    gmesh->NodeVec().Resize(nnodes);
+    gmesh->SetMaxNodeId(8);
+    
+    TPZManVector<REAL,3> coord(3,0.);
+    int in = 0;
+    
+    //cubo [0,1]ˆ3
+    //c0
+    coord[0] = 0.0;
+    coord[1] = 0.0;
+    coord[2] = 0.0;
+    gmesh->NodeVec()[in].SetCoord(coord);
+    gmesh->NodeVec()[in].SetNodeId(in);
+    in++;
+    //c1
+    coord[0] = 1.0;
+    coord[1] = 0.0;
+    coord[2] = 0.0;
+    gmesh->NodeVec()[in].SetCoord(coord);
+    gmesh->NodeVec()[in].SetNodeId(in);
+    in++;
+    //c2
+    coord[0] = 1.0;
+    coord[1] = 1.0;
+    coord[2] = 0.0;
+    gmesh->NodeVec()[in].SetCoord(coord);
+    gmesh->NodeVec()[in].SetNodeId(in);
+    in++;
+    //c3
+    coord[0] = 0.0;
+    coord[1] = 1.0;
+    coord[2] = 0.0;
+    gmesh->NodeVec()[in].SetCoord(coord);
+    gmesh->NodeVec()[in].SetNodeId(in);
+    in++;
+    
+    //c4
+    coord[0] = 0.0;
+    coord[1] = 0.0;
+    coord[2] = 1.0;
+    gmesh->NodeVec()[in].SetCoord(coord);
+    gmesh->NodeVec()[in].SetNodeId(in);
+    in++;
+    //c5
+    coord[0] = 1.0;
+    coord[1] = 0.0;
+    coord[2] = 1.0;
+    gmesh->NodeVec()[in].SetCoord(coord);
+    gmesh->NodeVec()[in].SetNodeId(in);
+    in++;
+    //c6
+    coord[0] = 1.0;
+    coord[1] = 1.0;
+    coord[2] = 1.0;
+    gmesh->NodeVec()[in].SetCoord(coord);
+    gmesh->NodeVec()[in].SetNodeId(in);
+    in++;
+    //c7
+    coord[0] = 0.0;
+    coord[1] = 1.0;
+    coord[2] = 1.0;
+    gmesh->NodeVec()[in].SetCoord(coord);
+    gmesh->NodeVec()[in].SetNodeId(in);
+    in++;
+    gmesh->SetMaxElementId(in);
+    
+    int index = 0;
+    
+    TPZVec<long> TopologyQuad(4);
+    
+    // bottom
+    TopologyQuad[0] = 0;
+    TopologyQuad[1] = 1;
+    TopologyQuad[2] = 2;
+    TopologyQuad[3] = 3;
+    new TPZGeoElRefPattern< pzgeom::TPZGeoQuad>(index,TopologyQuad,bc0,*gmesh);
+    index++;
+    
+    // Front
+    TopologyQuad[0] = 0;
+    TopologyQuad[1] = 1;
+    TopologyQuad[2] = 5;
+    TopologyQuad[3] = 4;
+    new TPZGeoElRefPattern< pzgeom::TPZGeoQuad>(index,TopologyQuad,bc1,*gmesh);
+    index++;
+    
+    // Rigth
+    TopologyQuad[0] = 1;
+    TopologyQuad[1] = 2;
+    TopologyQuad[2] = 6;
+    TopologyQuad[3] = 5;
+    new TPZGeoElRefPattern< pzgeom::TPZGeoQuad>(index,TopologyQuad,bc2,*gmesh);
+    index++;
+    
+    // Back
+    TopologyQuad[0] = 3;
+    TopologyQuad[1] = 2;
+    TopologyQuad[2] = 6;
+    TopologyQuad[3] = 7;
+    new TPZGeoElRefPattern< pzgeom::TPZGeoQuad>(index,TopologyQuad,bc3,*gmesh);
+    index++;
+    
+    // Left
+    TopologyQuad[0] = 0;
+    TopologyQuad[1] = 3;
+    TopologyQuad[2] = 7;
+    TopologyQuad[3] = 4;
+    new TPZGeoElRefPattern< pzgeom::TPZGeoQuad>(index,TopologyQuad,bc4,*gmesh);
+    index++;
+    
+    // Top
+    TopologyQuad[0] = 4;
+    TopologyQuad[1] = 5;
+    TopologyQuad[2] = 6;
+    TopologyQuad[3] = 7;
+    new TPZGeoElRefPattern< pzgeom::TPZGeoQuad>(index,TopologyQuad,bc5,*gmesh);
+    index++;
+    
+    TPZManVector<long,8> TopolCubo(8,0);
+    TopolCubo[0] = 0;
+    TopolCubo[1] = 1;
+    TopolCubo[2] = 2;
+    TopolCubo[3] = 3;
+    TopolCubo[4] = 4;
+    TopolCubo[5] = 5;
+    TopolCubo[6] = 6;
+    TopolCubo[7] = 7;
+    
+    
+    new TPZGeoElRefPattern< pzgeom::TPZGeoCube> (index, TopolCubo, matId, *gmesh);
+    index++;
+    
+    
+    gmesh->BuildConnectivity();
+    
+    /// gmesh para aqui
+    
+    TPZVec<TPZGeoEl *> sons;
+    for (int iref = 0; iref < ndiv; iref++) {
+        int nel = gmesh->NElements();
+        for (int iel = 0; iel < nel; iel++) {
+            TPZGeoEl *gel = gmesh->ElementVec()[iel];
+            if (gel->HasSubElement()) {
+                continue;
+            }
+            gel->Divide(sons);
+        }
+    }
+    
+    
+    //    std::ofstream out("SingleCubeWithBcs.vtk");
+    //    TPZVTKGeoMesh::PrintGMeshVTK(gmesh, out, true);
+    
+    return gmesh;
+}
+
+TPZGeoMesh * CreateOneCuboWithTetraedrons(int ndiv)
+{
+    double dndiv = ndiv;
+    int nelem = (int) pow(2., dndiv);
+    
+    int tetraedra_2[6][4] = { {1,2,5,4}, {4,7,3,2}, {0,1,2,4}, {0,2,3,4}, {4,5,6,2},{4,6,7,2} };
+    
+    TPZGeoMesh *gmesh = new TPZGeoMesh;
+    GenerateNodes(gmesh,nelem);
+    gmesh->SetDimension(3);
+    
+    for (long i=0; i<nelem; i++) {
+        for (long j=0; j<nelem; j++) {
+            for (long k=0; k<nelem; k++) {
+                TPZManVector<long,8> nodes(8,0);
+                nodes[0] = k*(nelem+1)*(nelem+1)+j*(nelem+1)+i;
+                nodes[1] = k*(nelem+1)*(nelem+1)+j*(nelem+1)+i+1;
+                nodes[2] = k*(nelem+1)*(nelem+1)+(j+1)*(nelem+1)+i+1;
+                nodes[3] = k*(nelem+1)*(nelem+1)+(j+1)*(nelem+1)+i;
+                nodes[4] = (k+1)*(nelem+1)*(nelem+1)+j*(nelem+1)+i;
+                nodes[5] = (k+1)*(nelem+1)*(nelem+1)+j*(nelem+1)+i+1;
+                nodes[6] = (k+1)*(nelem+1)*(nelem+1)+(j+1)*(nelem+1)+i+1;
+                nodes[7] = (k+1)*(nelem+1)*(nelem+1)+(j+1)*(nelem+1)+i;
+                
+                for (int el=0; el<6; el++)
+                {
+                    TPZManVector<long,4> elnodes(4);
+                    long index;
+                    for (int il=0; il<4; il++) {
+                        elnodes[il] = nodes[tetraedra_2[el][il]];
+                    }
+                    gmesh->CreateGeoElement(ETetraedro, elnodes, matId, index);
+                }
+            }
+        }
+    }
+    
+    gmesh->BuildConnectivity();
+    
+    // Boundary Conditions
+    const int numelements = gmesh->NElements();
+    //    const int bczMinus = -3, bczplus = -2, bcids = -1;
+    //    const int bczMinus = -1, bczplus = -1, bcids = -1;
+    
+    for(int el=0; el<numelements; el++)
+    {
+        TPZManVector <TPZGeoNode,4> Nodefinder(4);
+        TPZManVector <REAL,3> nodecoord(3);
+        TPZGeoEl *tetra = gmesh->ElementVec()[el];
+        TPZVec<long> ncoordVec(0);
+        long sizeOfVec = 0;
+        
+        // na face z = 0
+        for (int i = 0; i < 4; i++)
+        {
+            long pos = tetra->NodeIndex(i);
+            Nodefinder[i] = gmesh->NodeVec()[pos];
+            Nodefinder[i].GetCoordinates(nodecoord);
+            if (MyDoubleComparer(nodecoord[2],0.))
+            {
+                sizeOfVec++;
+                ncoordVec.Resize(sizeOfVec);
+                ncoordVec[sizeOfVec-1] = pos;
+            }
+        }
+        if(ncoordVec.NElements() == 3)
+        {
+            int lado = tetra->WhichSide(ncoordVec);
+            TPZGeoElSide tetraSide(tetra, lado);
+            TPZGeoElBC(tetraSide,bc0);
+        }
+        
+        ncoordVec.clear();
+        sizeOfVec = 0;
+        // na face y = 0
+        for (int i = 0; i < 4; i++)
+        {
+            long pos = tetra->NodeIndex(i);
+            Nodefinder[i] = gmesh->NodeVec()[pos];
+            Nodefinder[i].GetCoordinates(nodecoord);
+            if (MyDoubleComparer(nodecoord[1],0.))
+            {
+                sizeOfVec++;
+                ncoordVec.Resize(sizeOfVec);
+                ncoordVec[sizeOfVec-1] = pos;
+            }
+        }
+        if(ncoordVec.NElements() == 3)
+        {
+            int lado = tetra->WhichSide(ncoordVec);
+            TPZGeoElSide tetraSide(tetra, lado);
+            TPZGeoElBC(tetraSide,bc1);
+        }
+        
+        ncoordVec.clear();
+        sizeOfVec = 0;
+        // na face x = 1
+        for (int i = 0; i < 4; i++)
+        {
+            long pos = tetra->NodeIndex(i);
+            Nodefinder[i] = gmesh->NodeVec()[pos];
+            Nodefinder[i].GetCoordinates(nodecoord);
+            if (MyDoubleComparer(nodecoord[0],1.))
+            {
+                sizeOfVec++;
+                ncoordVec.Resize(sizeOfVec);
+                ncoordVec[sizeOfVec-1] = pos;
+            }
+        }
+        if(ncoordVec.NElements() == 3)
+        {
+            int lado = tetra->WhichSide(ncoordVec);
+            TPZGeoElSide tetraSide(tetra, lado);
+            TPZGeoElBC(tetraSide,bc2);
+        }
+        
+        ncoordVec.clear();
+        sizeOfVec = 0;
+        // na face y = 1
+        for (int i = 0; i < 4; i++)
+        {
+            long pos = tetra->NodeIndex(i);
+            Nodefinder[i] = gmesh->NodeVec()[pos];
+            Nodefinder[i].GetCoordinates(nodecoord);
+            if (MyDoubleComparer(nodecoord[1],1.))
+            {
+                sizeOfVec++;
+                ncoordVec.Resize(sizeOfVec);
+                ncoordVec[sizeOfVec-1] = pos;
+            }
+        }
+        if(ncoordVec.NElements() == 3)
+        {
+            int lado = tetra->WhichSide(ncoordVec);
+            TPZGeoElSide tetraSide(tetra, lado);
+            TPZGeoElBC(tetraSide,bc3);
+        }
+        
+        
+        ncoordVec.clear();
+        sizeOfVec = 0;
+        // na face x = 0
+        for (int i = 0; i < 4; i++)
+        {
+            long pos = tetra->NodeIndex(i);
+            Nodefinder[i] = gmesh->NodeVec()[pos];
+            Nodefinder[i].GetCoordinates(nodecoord);
+            if (MyDoubleComparer(nodecoord[0],0.))
+            {
+                sizeOfVec++;
+                ncoordVec.Resize(sizeOfVec);
+                ncoordVec[sizeOfVec-1] = pos;
+            }
+        }
+        if(ncoordVec.NElements() == 3)
+        {
+            int lado = tetra->WhichSide(ncoordVec);
+            TPZGeoElSide tetraSide(tetra, lado);
+            TPZGeoElBC(tetraSide,bc4);
+        }
+        
+        ncoordVec.clear();
+        sizeOfVec = 0;
+        // na face z = 1
+        for (int i = 0; i < 4; i++)
+        {
+            long pos = tetra->NodeIndex(i);
+            Nodefinder[i] = gmesh->NodeVec()[pos];
+            Nodefinder[i].GetCoordinates(nodecoord);
+            if (MyDoubleComparer(nodecoord[2],1.))
+            {
+                sizeOfVec++;
+                ncoordVec.Resize(sizeOfVec);
+                ncoordVec[sizeOfVec-1] = pos;
+            }
+        }
+        if(ncoordVec.NElements() == 3)
+        {
+            int lado = tetra->WhichSide(ncoordVec);
+            TPZGeoElSide tetraSide(tetra, lado);
+            TPZGeoElBC(tetraSide,bc5);
+        }
+    }
+    
+    return gmesh;
+}
+
+void GenerateNodes(TPZGeoMesh *gmesh, long nelem)
+{
+    gmesh->NodeVec().Resize((nelem+1)*(nelem+1)*(nelem+1));
+    for (long i=0; i<=nelem; i++) {
+        for (long j=0; j<=nelem; j++) {
+            for (long k=0; k<=nelem; k++) {
+                TPZManVector<REAL,3> x(3);
+                x[0] = k*1./nelem;
+                x[1] = j*1./nelem;
+                x[2] = i*1./nelem;
+                gmesh->NodeVec()[i*(nelem+1)*(nelem+1)+j*(nelem+1)+k].Initialize(x, *gmesh);
+            }
+        }
+    }
+}
+
+bool MyDoubleComparer(REAL a, REAL b)
+{
+    if (IsZero(a-b)){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
