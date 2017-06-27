@@ -21,7 +21,7 @@ int main()
 	input >> j;
     
 	TStructure structure;
-	readJSON(j, structure);
+	readStructure(j, structure);
     structure.setEquations();
     
 	vector<TNode> nodes = structure.getNodes();
@@ -35,6 +35,6 @@ int main()
     cout << "NDOF: " << structure.getNDOF() << endl;
     cout << "CDOF: " << structure.getCDOF() << endl;
     cout << "UDOF: " << structure.getUDOF() << endl;
-    
+    structure.getNodeEquations().Print(cout);
     return 0;
 }
