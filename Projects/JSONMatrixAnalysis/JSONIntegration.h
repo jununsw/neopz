@@ -17,13 +17,17 @@
 #include "TElement.h"		// TElement class.
 #include "TStructure.h"		// TStructure class.
 
-// JSON integration.
+#include "TNodalLoad.h"         // TNodalLoad class.
+#include "TDistributedLoad.h"	// TDistributedLoad class.
+#include "TElementLoad.h"       // TElementLoad class.
 
 // Displays a JSON script. 
 void printJSON(const nlohmann::json& J);
-// Converts JSON into a TStructure object and vice-versa.
-void readJSON(const nlohmann::json& J, TStructure& S);
-void writeJSON(nlohmann::json& J, const TStructure& S);
+
+// Converts JSON into a TStructure object.
+void readStructure(const nlohmann::json& J, TStructure& S);
+// Converts JSON into a load vector.
+void readLoads(const nlohmann::json& J, std::vector<double>& L, const TStructure& S);
 
 // TMaterial.
 void to_json(nlohmann::json& J, const TMaterial& M);

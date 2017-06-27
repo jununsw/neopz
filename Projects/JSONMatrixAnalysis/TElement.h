@@ -72,6 +72,10 @@ public:
     void setNode1ID(int Node1ID);
     // setMaterial - modifies the element's material.
     void setMaterialID(int MaterialID);
+    // setHinge0 - modifies the element's hinge at Node 0.
+    void setHinge0(bool Hinge0);
+    // setHinge1 - modifies the element's hinge at Node 1.
+    void setHinge1(bool Hinge1);
     
     // Assignment operator.
     TElement& operator= (const TElement& E);

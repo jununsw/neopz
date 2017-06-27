@@ -219,9 +219,19 @@ void TElement::setNode0ID(int Node0ID) {
 void TElement::setNode1ID(int Node1ID) {
     fLocalNodesIDs[1] = Node1ID;
 }
-// setMaterial - modifies the element material.
+// setMaterialID - modifies the element material.
 void TElement::setMaterialID(int MaterialID) {
     fMaterialID = MaterialID;
+}
+
+// setHinge0 - modifies the element's hinge at Node 0.
+void TElement::setHinge0(bool Hinge0) {
+    fHinges[0] = Hinge0;
+}
+
+// setHinge1 - modifies the element's hinge at Node 1.
+void TElement::setHinge1(bool Hinge1) {
+    fHinges[1] = Hinge1;
 }
 
 // setEquations - modifies the element equations indexes.

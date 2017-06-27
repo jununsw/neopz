@@ -10,7 +10,7 @@ const std::vector<TSupport>& Supports, 	const std::vector<TElement>& Elements)
 
 //Copy constructor.
 TStructure::TStructure(const TStructure& S) 
-    : fNodes(S.fNodes), fMaterials(S.fMaterials), fSupports(S.fSupports), fElements(S.fElements) { }
+    : fNodes(S.fNodes), fMaterials(S.fMaterials), fSupports(S.fSupports), fElements(S.fElements), fNodeEquations(S.fNodeEquations) { }
 
 // Destructor.
 TStructure::~TStructure() { }
@@ -39,6 +39,15 @@ std::vector<TElement> TStructure::getElements() const
 	return fElements;
 }
 
+// getElement - returns an element.
+TElement TStructure::getElements(int elementID) const {
+    return fElements[elementID];
+}
+
+// getNodeEquations - returns the matrix of DOFs of the nodes.
+TPZFMatrix<int> TStructure::getNodeEquations() const {
+    return fNodeEquations;
+}
 // getSupport - returns a support ID by giving the reference node ID.
 int TStructure::getSupportID(int NodeID) {
     int SupportID = -1;
@@ -190,6 +199,7 @@ void TStructure::setEquations() {
         fElements[i].setEquations(equations(Node0ID, 0), equations(Node0ID, 1), Node0RotationDOF,
                                   equations(Node1ID, 0), equations(Node1ID, 1), Node1RotationDOF);
     }
+    fNodeEquations = equations; // Stores the DOF of the structure.
 }
 
 // getK - returns the global stiffness matrix.

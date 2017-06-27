@@ -57,7 +57,7 @@ void TSupport::setFy(const bool Fy) {
 }
 // setM - modifies the M DOF of the support.
 void TSupport::setM(const bool M) {
-    fConditions[1] = M;
+    fConditions[2] = M;
 }
 // setNode - modifies the node of the support.
 void TSupport::setNodeID(const int NodeID) {

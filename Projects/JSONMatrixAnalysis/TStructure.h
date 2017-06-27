@@ -21,7 +21,7 @@ class TStructure {
 public:
 	// Default constructor.
 	TStructure(const std::vector<TNode>& Nodes = {}, const std::vector<TMaterial>& Materials = {},
-		const std::vector<TSupport>& Supports = {}, const std::vector<TElement>& Elements = {});
+               const std::vector<TSupport>& Supports = {}, const std::vector<TElement>& Elements = {});
 	// Copy constructor.
 	TStructure(const TStructure& S);
 	// Destructor.
@@ -35,6 +35,10 @@ public:
 	std::vector<TSupport> getSupports() const;
 	// getElements - returns the vector of elements.
 	std::vector<TElement> getElements() const;
+    // getElement - returns an element.
+    TElement getElements(int elementID) const;
+    // getNodeEquations - returns the matrix of DOFs of the nodes.
+    TPZFMatrix<int> getNodeEquations() const;
     
     //getSupport - returns a support ID by giving the reference node ID.
     int getSupportID(int NodeID);
@@ -71,6 +75,8 @@ private:
 	std::vector<TSupport> fSupports;
     // fElements - vector containing the structure elements.
 	std::vector<TElement> fElements;
+    // fNodeEquations - matrix containing the DOFs of the nodes.
+    TPZFMatrix<int> fNodeEquations;
 };
 
 #endif
