@@ -7,6 +7,7 @@
 #include "pzeltype.h"
 #include "pzerror.h"
 #include "pzgmesh.h"
+#include "minmax.h"
 #include "pzcompel.h"
 #include "pzintel.h"
 #include "pzgeoelside.h"

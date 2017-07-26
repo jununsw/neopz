@@ -139,7 +139,7 @@ ENABLE_TESTING()
 			#Adaptivity based on mesh cloning (Edimar Cesar thesis)
 			#add_subdirectory(Poisson_ArcTan)
 
-			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
+			#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
 			#Matrix Analysis with JSON:
 			add_subdirectory(JSONMatrixAnalysis)
 

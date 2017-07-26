@@ -10,6 +10,7 @@
 #include "pzerror.h"
 #include "pzmatrix.h"
 #include "pzfmatrix.h"
+#include "minmax.h"
 #include "pztrnsform.h"
 #include "pzvec.h"
 #include "pzstack.h"

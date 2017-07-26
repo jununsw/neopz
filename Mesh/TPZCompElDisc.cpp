@@ -38,6 +38,7 @@
 #include "time.h"
 #include "pzgeoel.h"
 #include "pzcompel.h"
+#include "minmax.h"
 #include <math.h>
 #include <stdio.h>
 #include "pzmaterialdata.h"

@@ -1,8 +1,8 @@
 /* This file was created by Gustavo BATISTELA.
  It contains the definitions of functions of the TElement class. */
 
-#include "TElement.h"
 #include "TStructure.h"
+#include "TElement.h"
 
 // Default constructor.
 TElement::TElement(int Node0ID, int Node1ID, bool Hinge0, bool Hinge1,
@@ -21,7 +21,7 @@ TElement::TElement(int Node0ID, int Node1ID, bool Hinge0, bool Hinge1,
     fEquations[5] = -1;
 }
 
-//Copy constructor.
+// Copy constructor.
 TElement::TElement(const TElement& E) {
     fLocalNodesIDs[0] = E.fLocalNodesIDs[0];
     fLocalNodesIDs[1] = E.fLocalNodesIDs[1];
@@ -40,9 +40,27 @@ TElement::TElement(const TElement& E) {
 // Destructor.
 TElement::~TElement() { }
 
+// Assignment operator.
+TElement& TElement::operator= (const TElement& E) {
+	if (this != &E) {
+		fLocalNodesIDs[0] = E.fLocalNodesIDs[0];
+		fLocalNodesIDs[1] = E.fLocalNodesIDs[1];
+		fHinges[0] = E.fHinges[0];
+		fHinges[1] = E.fHinges[1];
+		fMaterialID = E.fMaterialID;
+		fStructure = E.fStructure;
+		fEquations[0] = E.fEquations[0];
+		fEquations[1] = E.fEquations[1];
+		fEquations[2] = E.fEquations[2];
+		fEquations[3] = E.fEquations[3];
+		fEquations[4] = E.fEquations[4];
+		fEquations[5] = E.fEquations[5];
+	}
+	return *this;
+}
+
 // getLocalNodesIDs - accesses the nodes of the element.
-int* const TElement::getLocalNodesIDs()
-{
+int* const TElement::getLocalNodesIDs() {
 	return fLocalNodesIDs;
 }
 
@@ -234,6 +252,11 @@ void TElement::setHinge1(bool Hinge1) {
     fHinges[1] = Hinge1;
 }
 
+// setStructure - modifies the element's Structure.
+void TElement::setStructure(TStructure* Structure) {
+		fStructure = Structure;
+}
+
 // setEquations - modifies the element equations indexes.
 void TElement::setEquations(int Eq1, int Eq2, int Eq3, int Eq4, int Eq5, int Eq6) {
     fEquations[0] = Eq1;
@@ -242,25 +265,6 @@ void TElement::setEquations(int Eq1, int Eq2, int Eq3, int Eq4, int Eq5, int Eq6
     fEquations[3] = Eq4;
     fEquations[4] = Eq5;
     fEquations[5] = Eq6;
-}
-
-// Assignment operator.
-TElement& TElement::operator= (const TElement& E) {
-    if (this != &E) {
-        fLocalNodesIDs[0] = E.fLocalNodesIDs[0];
-        fLocalNodesIDs[1] = E.fLocalNodesIDs[1];
-        fHinges[0] = E.fHinges[0];
-        fHinges[1] = E.fHinges[1];
-        fMaterialID = E.fMaterialID;
-        fStructure = E.fStructure;
-        fEquations[0] = E.fEquations[0];
-        fEquations[1] = E.fEquations[1];
-        fEquations[2] = E.fEquations[2];
-        fEquations[3] = E.fEquations[3];
-        fEquations[4] = E.fEquations[4];
-        fEquations[5] = E.fEquations[5];
-    }
-    return *this;
 }
 
 // Function that prints the element information.

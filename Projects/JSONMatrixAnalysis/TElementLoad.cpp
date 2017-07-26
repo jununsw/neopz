@@ -1,18 +1,32 @@
 /* This file was created by Gustavo BATISTELA.
  It contains the definitions of functions of the TElementLoad class. */
 
+#include "TStructure.h"
 #include "TElementLoad.h"
 
 // Default constructor.
-TElementLoad::TElementLoad(double Fx, double Fy, double M, int ElementID, int Node)
-    : fFx(Fx), fFy(Fy), fM(M), fElementID(ElementID), fNode(Node) { }
+TElementLoad::TElementLoad(double Fx, double Fy, double M, int ElementID, int Node, TStructure* Structure)
+    : fFx(Fx), fFy(Fy), fM(M), fElementID(ElementID), fNode(Node), fStructure(Structure) { }
 
-//Copy constructor.
+// Copy constructor.
 TElementLoad::TElementLoad(const TElementLoad& EL)
-    : fFx(EL.fFx), fFy(EL.fFy), fM(EL.fM), fElementID(EL.fElementID), fNode(EL.fNode) { }
+    : fFx(EL.fFx), fFy(EL.fFy), fM(EL.fM), fElementID(EL.fElementID), fNode(EL.fNode), fStructure(EL.fStructure) { }
 
 // Destructor.
 TElementLoad::~TElementLoad() { }
+
+// Assignment operator.
+TElementLoad& TElementLoad::operator= (const TElementLoad& EL) {
+	if (this != &EL) {
+		fFx = EL.fFx;
+		fFy = EL.fFy;
+		fM = EL.fM;
+		fElementID = EL.fElementID;
+		fNode = EL.fNode;
+		fStructure = EL.fStructure;
+	}
+	return *this;
+}
 
 // getFx - returns the horizontal load applied to the load.
 double TElementLoad::getFx() const {
@@ -64,16 +78,27 @@ void TElementLoad::setNode(int Node) {
     fNode = Node;
 }
 
-// Assignment operator.
-TElementLoad& TElementLoad::operator= (const TElementLoad& EL) {
-    if (this != &EL) {
-        fFx = EL.fFx;
-        fFy = EL.fFy;
-        fM = EL.fM;
-        fElementID = EL.fElementID;
-        fNode = EL.fNode;
-    }
-    return *this;
+void TElementLoad::setStructure(TStructure * Structure) {
+	fStructure = Structure;
+}
+
+// store - adds the effects of the nodal load to the vector of loads.
+void TElementLoad::store(TPZFMatrix<double>& L) {
+	int nodeID;
+	if (this->fNode == 0) {
+		nodeID = fStructure->getElement(this->fElementID).getNode0ID();
+	}
+	else if (this->fNode == 1) {
+		nodeID = fStructure->getElement(this->fElementID).getNode1ID();
+	}
+
+	int fxDOF = fStructure->getNodeEquations()(nodeID, 0);
+	int fyDOF = fStructure->getNodeEquations()(nodeID, 1);
+	int mDOF = fStructure->getNodeEquations()(nodeID, 2);
+
+	L(0, fxDOF) += this->fFx;
+	L(0, fyDOF) += this->fFy;
+	L(0, mDOF) += this->fM;
 }
 
 // Function that prints the load information.

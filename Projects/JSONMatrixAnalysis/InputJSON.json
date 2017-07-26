@@ -1,63 +1,48 @@
 {
-    "Nodes":
-    [
-    [0, 0],
-    [0, 4],
-    [0, 6],
-    [6, 6],
-    [6, 2],
-    [6, 0]
-    ],
-    "Materials":
-    [
+  "Nodes": [
+    [ 0.0, 240.0 ],
+    [ 240.0, 240.0 ],
+    [ 240.0, 0.0 ]
+  ],
+
+  "Materials": [
     {
-        "E": 29000,
-        "A": 10,
-        "I": 500
+      "E": 29000,
+      "A": 10,
+      "I": 500
     }
-    ],
-    "Supports":
-    [
+  ],
+
+  "Supports": [
     {
-        "Conditions": [true, true, true],
-        "Node": 0
+      "Conditions": [ false, true, false ],
+      "Node": 0
     },
     {
-        "Conditions": [true, true, true],
-        "Node": 5
+      "Conditions": [ true, true, true ],
+      "Node": 2
     }
-    ],
-    "Elements":
-    [
+  ],
+
+  "Elements": [
     {
-        "Nodes": [0,1],
-        "Hinges": [false, false],
-        "Material": 0
+      "Nodes": [ 0, 1 ],
+      "Hinges": [ false, false ],
+      "Material": 0
     },
     {
-        "Nodes": [1,2],
-        "Hinges": [false, true],
-        "Material": 0
-    },
-    {
-        "Nodes": [2,3],
-        "Hinges": [false, false],
-        "Material": 0
-    },
-    {
-        "Nodes": [3,4],
-        "Hinges": [true, false],
-        "Material": 0
-    },
-    {
-        "Nodes": [4,5],
-        "Hinges": [false, true],
-        "Material": 0
-    },
-    {
-        "Nodes": [4,1],
-        "Hinges": [true, true],
-        "Material": 0
+      "Nodes": [ 1, 2 ],
+      "Hinges": [ false, false ],
+      "Material": 0
     }
-    ]
+  ],
+
+  "Nodal Loads": [
+    {
+      "Node": 1,
+      "Fx": 5.0,
+      "Fy": 0,
+      "M": 0
+    }
+  ]
 }

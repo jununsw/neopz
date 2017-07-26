@@ -15,10 +15,12 @@ class TNode {
 public:
     // Default constructor.
     TNode(double X = 0, double Y = 0);
-    //Copy constructor.
+    // Copy constructor.
     TNode(const TNode& N);
     // Destructor.
     ~TNode();
+	// Assignment operator.
+	TNode& operator=(const TNode& N);
     
     // getX - accesses the node X coord.
     double getX() const;
@@ -33,9 +35,6 @@ public:
     void setY(double Y);
     // setCoord - modifies the vector of coordinates.
     void setCoord(double* Coordinates);
-    
-    // Assignment operator.
-    TNode& operator=(const TNode& N);
     
     // Function that prints the node information.
     void print();

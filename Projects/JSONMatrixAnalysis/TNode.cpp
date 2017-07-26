@@ -9,7 +9,7 @@ TNode::TNode(double X, double Y) {
     fCoordinates[1] = Y;
 }
 
-//Copy constructor.
+// Copy constructor.
 TNode::TNode(const TNode& N) {
     fCoordinates[0] = N.fCoordinates[0];
     fCoordinates[1] = N.fCoordinates[1];
@@ -17,6 +17,15 @@ TNode::TNode(const TNode& N) {
 
 // Destructor.
 TNode::~TNode() { }
+
+// Assignment operator.
+TNode& TNode::operator= (const TNode& N) {
+	if (this != &N) {
+		fCoordinates[0] = N.fCoordinates[0];
+		fCoordinates[1] = N.fCoordinates[1];
+	}
+	return *this;
+}
 
 // getX - accesses the node X coord.
 double TNode::getX() const {
@@ -43,15 +52,6 @@ void TNode::setY(double Y) {
 void TNode::setCoord(double* Coordinates) {
     fCoordinates[0] = Coordinates[0];
     fCoordinates[1] = Coordinates[1];
-}
-
-// Assignment operator.
-TNode& TNode::operator= (const TNode& N) {
-    if (this != &N) {
-        fCoordinates[0] = N.fCoordinates[0];
-        fCoordinates[1] = N.fCoordinates[1];
-    }
-    return *this;
 }
 
 // Function that prints the node information.

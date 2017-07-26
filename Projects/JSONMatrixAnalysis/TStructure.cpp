@@ -8,7 +8,7 @@ TStructure::TStructure(const std::vector<TNode>& Nodes, const std::vector<TMater
 const std::vector<TSupport>& Supports, 	const std::vector<TElement>& Elements)
     : fNodes(Nodes), fMaterials(Materials), fSupports(Supports), fElements(Elements) { }
 
-//Copy constructor.
+// Copy constructor.
 TStructure::TStructure(const TStructure& S) 
     : fNodes(S.fNodes), fMaterials(S.fMaterials), fSupports(S.fSupports), fElements(S.fElements), fNodeEquations(S.fNodeEquations) { }
 
@@ -16,31 +16,27 @@ TStructure::TStructure(const TStructure& S)
 TStructure::~TStructure() { }
 
 // getNodes - returns the vector of nodes.
-std::vector<TNode> TStructure::getNodes() const
-{
+std::vector<TNode> TStructure::getNodes() const {
 	return fNodes;
 }
 
 // getMaterials - returns the vector of materials.
-std::vector<TMaterial> TStructure::getMaterials() const
-{
+std::vector<TMaterial> TStructure::getMaterials() const {
 	return fMaterials;
 }
 
 // getSupports - returns the vector of supports.
-std::vector<TSupport> TStructure::getSupports() const
-{
+std::vector<TSupport> TStructure::getSupports() const {
 	return fSupports;
 }
 
 // getElements - returns the vector of elements.
-std::vector<TElement> TStructure::getElements() const
-{
+std::vector<TElement> TStructure::getElements() const {
 	return fElements;
 }
 
 // getElement - returns an element.
-TElement TStructure::getElements(int elementID) const {
+TElement TStructure::getElement(int elementID) const {
     return fElements[elementID];
 }
 
@@ -68,7 +64,7 @@ int TStructure::getNDOF() const {
     int NDOF = 2*fNodes.size();  // DOF counter variable, intialized considering vertical and horizontal displacements.
     
     std::vector<bool> aux(fNodes.size());     // Auxiliar that keeps track if there are already non-hinged elements connected to a certain node.
-    std::fill_n(&aux[0], fNodes.size(), false);
+	std::fill(aux.begin(), aux.end(), false);
     
     for (int i = 0; i < fSupports.size(); i ++) {   // Counts the number of constrained rotation DOF.
         if (fSupports[i].getM() == true) {
@@ -212,10 +208,8 @@ TPZFMatrix<double> TStructure::getK() const {
         TElement elem = fElements[i];
         TPZFMatrix<double> kLocal = elem.getK();
         
-        for (int aux1 = 0; aux1 < 6; aux1++)
-        {
-            for (int aux2 = 0; aux2 < 6; aux2++)
-            {
+        for (int aux1 = 0; aux1 < 6; aux1++) {
+            for (int aux2 = 0; aux2 < 6; aux2++) {
                 K(elem.getEquations()[aux1], elem.getEquations()[aux2]) += kLocal(aux1, aux2);
             }
         }
@@ -223,41 +217,94 @@ TPZFMatrix<double> TStructure::getK() const {
     return K;
 }
 
-// getPartitionedK - returns the left upper block of the global stiffness matrix K.
-TPZFMatrix<double> TStructure::getPartitionedK() const {
+// getK11 - returns the left upper block of the global stiffness matrix K.
+TPZFMatrix<double> TStructure::getK11() const {
     int UDOF = this->getUDOF();
-    TPZFMatrix<double> partitionedK(UDOF, UDOF);
+    TPZFMatrix<double> K11(UDOF, UDOF);
     TPZFMatrix<double> K = this->getK();
     
     for (int i = 0; i < UDOF; i++) {
-        for (int j = 0; j < UDOF; j++)
-        {
-            partitionedK(i, j) = K(i, j);
+        for (int j = 0; j < UDOF; j++) {
+            K11(i, j) = K(i, j);
         }
     }
-    return partitionedK;
+    return K11;
+}
+
+// getK21 - returns the left down block of the global stiffness matrix K.
+TPZFMatrix<double> TStructure::getK21() const {
+	int UDOF = this->getUDOF();
+	int CDOF = this->getCDOF();
+
+	TPZFMatrix<double> K21(CDOF, UDOF);
+	TPZFMatrix<double> K = this->getK();
+
+	for (int i = 0; i < CDOF; i++) {
+		for (int j = 0; j < UDOF; j++) {
+			K21(i, j) = K(UDOF + i, j);
+		}
+	}
+	return K21;
 }
 
 // setNodes - modifies the vector of nodes.
-void TStructure::setNodes(const std::vector<TNode>& Nodes)
-{
+void TStructure::setNodes(const std::vector<TNode>& Nodes) {
 	fNodes = Nodes;
 }
 
 // setMaterials - modifies the vector of materials.
-void TStructure::setMaterials(const std::vector<TMaterial>& Materials)
-{
+void TStructure::setMaterials(const std::vector<TMaterial>& Materials) {
 	fMaterials = Materials;
 }
 
 // setSupports - modifies the vector of supports.
-void TStructure::setSupports(const std::vector<TSupport>& Supports)
-{
+void TStructure::setSupports(const std::vector<TSupport>& Supports) {
 	fSupports = Supports;
 }
 
 // setElements - modifies the vector of elements.
-void TStructure::setElements(const std::vector<TElement>& Elements)
-{
+void TStructure::setElements(const std::vector<TElement>& Elements) {
 	fElements = Elements;
 }
+
+// getLoads - returns the vector of loads.
+void TStructure::getLoads(TPZFMatrix<double>& loads, std::vector<TNodalLoad>& nLoads,
+	std::vector<TDistributedLoad>& dLoads, std::vector<TElementLoad>& eLoads) {
+
+	for (int i = 0; i < nLoads.size(); i++) {
+		nLoads[i].setStructure(this);
+		nLoads[i].store(loads);
+	}
+
+	for (int i = 0; i < dLoads.size(); i++) {
+		dLoads[i].setStructure(this);
+		dLoads[i].store(loads);
+	}
+
+	for (int i = 0; i < eLoads.size(); i++) {
+		eLoads[i].setStructure(this);
+		eLoads[i].store(loads);
+	}
+}
+
+// getDU - solves the unknown displacements.
+void TStructure::getDU(TPZFMatrix<double>& loads, TPZFMatrix<double>& DU) {
+
+	int UDOF = this->getUDOF();
+	TPZFMatrix<double> knownLoads(UDOF, 1, 0);
+
+	for (int i = 0; i < UDOF; i++) {
+		knownLoads(i, 0) = loads(i, 0);
+	}
+
+	TPZFMatrix<double> invK11;
+	this->getK11().Inverse(invK11, ELU);
+	DU = invK11*knownLoads;
+}
+
+// getSupportLoads - solves the support reactions.
+void TStructure::getSupportLoads(TPZFMatrix<double>& DU, TPZFMatrix<double>& SReactions) {
+	int CDOF = this->getCDOF();
+	SReactions = this->getK21()*DU;
+}
+

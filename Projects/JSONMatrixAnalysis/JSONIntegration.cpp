@@ -1,7 +1,12 @@
-/* This file was created by Gustavo BATISTELA.
- It contains the definitions of functions that integrate JSON with the structure classes. */
+/* 
+	This file was created by Gustavo BATISTELA.
+	It contains the definitions of functions that integrate JSON with the structure classes. 
+ */
 
 #include "JSONIntegration.h"
+#include "TNodalLoad.h"
+#include "TDistributedLoad.h"
+#include "TElementLoad.h"
 
 // Displays a JSON script.
 void printJSON(const nlohmann::json& J) {
@@ -9,13 +14,12 @@ void printJSON(const nlohmann::json& J) {
     std::cout << std::flush;
 }
 
-// Converts JSON into a TStructure object and vice-versa.
+// Reads the structure from the input JSON file.
 void readStructure(const nlohmann::json& J, TStructure& S) {
-    
+
 	// Reads the vector of TNode.
     std::vector<TNode> nodes;
-    for (int i = 0; i < J["Nodes"].size(); i++)
-    {       
+    for (int i = 0; i < J["Nodes"].size(); i++) {       
         TNode node = J["Nodes"][i];
         nodes.push_back(node);
     }
@@ -23,8 +27,7 @@ void readStructure(const nlohmann::json& J, TStructure& S) {
 
     // Reads the vector of TMaterial.
     std::vector<TMaterial> materials(0);
-    for (int i = 0; i < J["Materials"].size(); i++)
-    {
+    for (int i = 0; i < J["Materials"].size(); i++) {
         TMaterial material= J["Materials"][i];
         materials.push_back(material);
     }
@@ -42,41 +45,41 @@ void readStructure(const nlohmann::json& J, TStructure& S) {
 	// Reads the vector of TElements.
 	std::vector<TElement> elements(0);
 	for (int i = 0; i < J["Elements"].size(); i++)
-	{
-        //int c = i;
-		/*int node1ID = J["Elements"][i]["Nodes"][0].get<int>();
-		int node2ID = J["Elements"][i]["Nodes"][1].get<int>();
-        bool hinge1 = J["Elements"][i]["Hinges"][0].get<bool>();
-        bool hinge2 = J["Elements"][i]["Hinges"][1].get<bool>();
-        int materialID = J["Elements"][i]["Material"].get<int>();
-        
-		TElement element(node1ID, node2ID, hinge1, hinge2, materialID, &S);*/
-        TElement element = J["Elements"][i];
+	{	
+		TElement element = J["Elements"][i];
+		element.setStructure(&S);
 		elements.push_back(element);
 	}
 	S.setElements(elements);
 }
 
-void readLoads(const nlohmann::json& J, std::vector<TNodalLoad>& nodalLoads, std::vector<TElementLoad>& elementLoads, std::vector<TDistributedLoad>& distributedLoads)
-{
-    
+// Reads the loads from the input JSON file.
+void readLoads(const nlohmann::json& J, std::vector<TNodalLoad>& nLoads, std::vector<TDistributedLoad>& dLoads, std::vector<TElementLoad>& eLoads) {
+
     nlohmann::json jNodalLoads = J["Nodal Loads"];
-    for (int i = 0; i < jNodalLoads.size(); i++)
-    {
-        int nodeID = jNodalLoads.at(i)["Node"].get<int>();
-        double fx = jNodalLoads.at(i)["Fx"].get<double>();
-        double fy = jNodalLoads.at(i)["Fy"].get<double>();
-        double m = jNodalLoads.at(i)["M"].get<double>();
-        
-        TNodalLoad nLoad(fx, fy, m, nodeID);
-        nodalLoads.push_back(nLoad);
+    for (int i = 0; i < jNodalLoads.size(); i++) {
+		//TNodalLoad nodalLoad = J["Nodal Loads"][i];
+        nLoads.push_back(TNodalLoad(J["Nodal Loads"][i]));
     }
+
+	/*nlohmann::json jDistributedLoads = J["Distributed Loads"];
+	for (int i = 0; i < jDistributedLoads.size(); i++) {
+		//TDistributedLoad distributedLoad = J["Distributed Loads"][i];
+		loads.push_back(new TDistributedLoad(J["Distributed Loads"][i]));
+	}
+
+	nlohmann::json jElementLoads = J["Element Loads"];
+	for (int i = 0; i < jElementLoads.size(); i++) {
+		//TElementLoad elementLoad = J["Element Loads"][i];
+		loads.push_back(new TElementLoad(J["Element Loads"][i]));
+	}*/
 }
 
 // TMaterial.
 void to_json(nlohmann::json& J, const TMaterial& M) {
-    J = nlohmann::json{{"E", M.getE()}, {"A", M.getA()}, {"I", M.getI()}};
+	J = nlohmann::json{ {"E", M.getE()}, {"A", M.getA()}, {"I", M.getI()} };
 }
+
 void from_json(const nlohmann::json& J, TMaterial& M) {
     M.setE(J.at("E").get<double>());
     M.setA(J.at("A").get<double>());
@@ -84,18 +87,18 @@ void from_json(const nlohmann::json& J, TMaterial& M) {
 }
 
 // TNode.
-void to_json(nlohmann::json& J, const TNode& N){
+void to_json(nlohmann::json& J, const TNode& N) {
     J = nlohmann::json{N.getX(), N.getY()};
 }
 
-void from_json(const nlohmann::json& J, TNode& N){
+void from_json(const nlohmann::json& J, TNode& N) {
     N.setX(J[0].get<double>());
     N.setY(J[1].get<double>());
 }
 
 // TSupport.
 void to_json(nlohmann::json& J, const TSupport& S) {
-    J = nlohmann::json{{"Conditions", {S.getFx(), S.getFy(), S.getM()}}, {"Node", S.getNodeID()}};
+	J = nlohmann::json{ {"Conditions", {S.getFx(), S.getFy(), S.getM()}}, {"Node", S.getNodeID()} };
 }
 
 void from_json(const nlohmann::json& J, TSupport& S) {
@@ -107,7 +110,7 @@ void from_json(const nlohmann::json& J, TSupport& S) {
 
 // TElement.
 void to_json(nlohmann::json& J, const TElement& E) {
-    J = nlohmann::json{{"Nodes", {E.getNode0ID(), E.getNode1ID()}}, {"Hinges", {E.getHinge0(), E.getHinge1()}}, {"Material", E.getMaterialID()}};
+	J = nlohmann::json{ {"Nodes", {E.getNode0ID(), E.getNode1ID()}}, {"Hinges", {E.getHinge0(), E.getHinge1()}}, {"Material", E.getMaterialID()} };
 }
 
 void from_json(const nlohmann::json& J, TElement& E) {
@@ -118,8 +121,39 @@ void from_json(const nlohmann::json& J, TElement& E) {
     E.setMaterialID(J["Material"].get<int>());
 }
 
+// TNodalLoad.
+void to_json(nlohmann::json& J, const TNodalLoad& NL) {
+	J = nlohmann::json{ {"Node", NL.getNodeID()}, {"Fx", NL.getFx()}, { "Fy", NL.getFy() }, { "M", NL.getM() } };
+}
 
+void from_json(const nlohmann::json& J, TNodalLoad& NL) {
+	NL.setNodeID(J["Node"].get<int>());
+	NL.setFx(J["Fx"].get<double>());
+	NL.setFy(J["Fy"].get<double>());
+	NL.setM(J["M"].get<double>());
+}
 
+// TDistributedLoad.
+void to_json(nlohmann::json& J, const TDistributedLoad& DL) {
+	J = nlohmann::json{ {"Element", DL.getElementID()}, {"Node 0 Load", DL.getNode0Load()}, {"Node 1 Load", DL.getNode1Load()}, {"Load Plane", DL.getLoadPlane()} };
+}
 
+void from_json(const nlohmann::json& J, TDistributedLoad& DL) {
+	DL.setElementID(J["Element"].get<int>());
+	DL.setNode0Load(J["Node 0 Load"].get<double>());
+	DL.setNode1Load(J["Node 1 Load"].get<double>());
+	DL.setLoadPlane(J["Load Plane"].get<bool>());
+}
 
+// TElementLoad.
+void to_json(nlohmann::json& J, const TElementLoad& EL) {
+	J = nlohmann::json{ {"Element", EL.getElementID()}, {"Node", EL.getNode()}, {"Fx", EL.getFx()}, {"Fy", EL.getFy()}, {"M", EL.getM()} };
+}
 
+void from_json(const nlohmann::json & J, TElementLoad & EL) {
+	EL.setElementID(J["Element"].get<int>());
+	EL.setNode(J["Node"].get<int>());
+	EL.setFx(J["Fx"].get<double>());
+	EL.setFy(J["Fy"].get<double>());
+	EL.setM(J["M"].get<double>());
+}

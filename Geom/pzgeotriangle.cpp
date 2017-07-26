@@ -9,6 +9,7 @@
 #include "pzshapetriang.h"
 #include "pzgmesh.h"
 #include "tpzgeoelrefpattern.h"
+#include "minmax.h"
 
 #include "pzlog.h"
 

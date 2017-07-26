@@ -15,10 +15,12 @@ class TMaterial {
 public:
     // Default constructor.
     TMaterial(double E = 0, double A = 0, double I = 0);
-    //Copy constructor.
+    // Copy constructor.
     TMaterial(const TMaterial& M);
     // Destructor.
     ~TMaterial();
+	// Assignment operator.
+	TMaterial& operator= (const TMaterial& M);
     
     // getE - accesses the Young's Modulus of the material.
     double getE() const;
@@ -33,9 +35,6 @@ public:
     void setA(double A);
     // setIx - modifies the second moment of area Ix.
     void setI(double I);
-    
-    // Assignment operator.
-    TMaterial& operator= (const TMaterial& M);
     
     // Function that prints the material information.
     void print();

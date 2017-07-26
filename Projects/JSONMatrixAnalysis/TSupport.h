@@ -18,10 +18,12 @@ public:
     // Default constructor.
     TSupport(const bool Fx = false, const bool Fy = false, const bool M = false,
 		const int NodeID = 0, TStructure* Structure = nullptr);
-    //Copy constructor.
+    // Copy constructor.
     TSupport(const TSupport& S);
     // Destructor.
     ~TSupport();
+	// Assignment operator.
+	TSupport& operator= (const TSupport& S);
     
     // getFx - accesses the Fx DOF of the support.
     bool getFx() const;
@@ -42,9 +44,6 @@ public:
     void setM(const bool M);
     // setNode - modifies the node of the support.
     void setNodeID(const int NodeID);
-    
-    // Assignment operator.
-    TSupport& operator= (const TSupport& S);
     
     // Function that prints the support information.
     void print();

@@ -12,6 +12,16 @@ TMaterial::TMaterial(const TMaterial& M) : fE(M.fE), fA(M.fA), fI(M.fI) { }
 // Destructor.
 TMaterial::~TMaterial() { }
 
+// Assignment operator.
+TMaterial& TMaterial::operator=(const TMaterial& M) {
+	if (this != &M) {
+		fE = M.fE;
+		fA = M.fA;
+		fI = M.fI;
+	}
+	return *this;
+}
+
 // getE - accesses the Young's Modulus of the material.
 double TMaterial::getE() const {
     return fE;
@@ -36,16 +46,6 @@ void TMaterial::setA(double A) {
 // setI - modifies the value of I.
 void TMaterial::setI(double I) {
     fI = I;
-}
-
-// Assignment operator.
-TMaterial& TMaterial::operator=(const TMaterial& M) {
-    if (this != &M) {
-        fE = M.fE;
-        fA = M.fA;
-        fI = M.fI;
-    }
-    return *this;
 }
 
 // Function that prints the information of a node.

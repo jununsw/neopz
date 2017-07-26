@@ -9,13 +9,16 @@ and the declaration of its members. */
 #include <string>			// Operations with strings.
 #include "json.hpp"			// JSON compatibility.
 
-#include "pzfmatrix.h"		// PZ Matrix operations.
-#include "TNode.h"			// TNode class.
-#include "TMaterial.h"		// TMaterial class.
-#include "TSupport.h"		// TSupport class.
-#include "TElement.h"		// TElement class.
+#include "pzfmatrix.h"
+#include "TNode.h"
+#include "TMaterial.h"
+#include "TSupport.h"
+#include "TElement.h"
+#include "TNodalLoad.h"
+#include "TDistributedLoad.h"
+#include "TElementLoad.h"
 
-// TSupport class and declarations of its functions.
+// TStructure class and declarations of its functions.
 class TStructure {
 
 public:
@@ -36,7 +39,7 @@ public:
 	// getElements - returns the vector of elements.
 	std::vector<TElement> getElements() const;
     // getElement - returns an element.
-    TElement getElements(int elementID) const;
+    TElement getElement(int elementID) const;
     // getNodeEquations - returns the matrix of DOFs of the nodes.
     TPZFMatrix<int> getNodeEquations() const;
     
@@ -50,10 +53,13 @@ public:
     int getUDOF() const;
     // setEquations - enumerates the DOF associated with each element.
     void setEquations();
+
     // getK - returns the global stiffness matrix.
     TPZFMatrix<double> getK() const;
-    // getPartitionedK - returns the left upper block of the global stiffness matrix K.
-    TPZFMatrix<double> getPartitionedK() const;
+    // getK11 - returns the left upper block of the global stiffness matrix K.
+    TPZFMatrix<double> getK11() const;
+	// getK21 - returns the left down block of the global stiffness matrix K.
+	TPZFMatrix<double> getK21() const;
     
 	// setNodes - modifies the vector of nodes.
 	void setNodes(const std::vector<TNode>& Nodes);
@@ -63,10 +69,17 @@ public:
 	void setSupports(const std::vector<TSupport>& Supports);
 	// setElements - modifies the vector of elements.
 	void setElements(const std::vector<TElement>& Elements);
-    
+
+
+	// getLoads - returns the vector of loads.
+	void getLoads(TPZFMatrix<double>& loads, std::vector<TNodalLoad>& nLoads, 
+		std::vector<TDistributedLoad>& dLoads, std::vector<TElementLoad>& eLoads);
+	// getDU - solves the unknown displacements.
+	void getDU(TPZFMatrix<double>& loads, TPZFMatrix<double>& DU);
+	// getSupportLoads - solves the support reactions.
+	void getSupportLoads(TPZFMatrix<double>& DU, TPZFMatrix<double>& SReactions);
 
 private:
-	// Member variables:
     // fNodes - vector containing the structure nodes.
 	std::vector<TNode> fNodes;
     // fMaterials - vector containing the available materials.

@@ -9,16 +9,20 @@
 #include <string>			// Operations with strings.
 #include "json.hpp"			// JSON compatibility.
 
+class TStructure;
+
 // TElementLoad class and declarations of its functions.
 class TElementLoad {
     
 public:
     // Default constructor.
-    TElementLoad(double Fx = 0, double Fy = 0, double M = 0, int ElementID = -1, int Node = -1);
-    //Copy constructor.
+    TElementLoad(double Fx = 0, double Fy = 0, double M = 0, int ElementID = -1, int Node = -1, TStructure* Structure = nullptr);
+    // Copy constructor.
     TElementLoad(const TElementLoad& EL);
     // Destructor.
     ~TElementLoad();
+	// Assignment operator.
+	TElementLoad& operator= (const TElementLoad& EL);
     
     // getFx - returns the horizontal load applied to the load.
     double getFx() const;
@@ -41,9 +45,11 @@ public:
     void setElementID(int ElementID);
     // setNode - modifies the local ID (0 or 1) of the node which the load is applied to.
     void setNode(int Node);
-    
-    // Assignment operator.
-    TElementLoad& operator= (const TElementLoad& EL);
+	// setStructure - modifies the element's Structure.
+	void setStructure(TStructure* Structure);
+
+	// store - adds the effects of the nodal load to the vector of loads.
+	void store(TPZFMatrix<double>& L);
     
     // Function that prints the load information.
     void print();
@@ -55,7 +61,7 @@ private:
     double fM;
     int fElementID;
     int fNode;
+	TStructure* fStructure;
 };
-
 
 #endif

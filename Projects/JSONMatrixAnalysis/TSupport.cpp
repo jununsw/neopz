@@ -14,7 +14,7 @@ TSupport::TSupport(const bool Fx, const bool Fy, const bool M,
     fStructure = Structure;
 }
 
-//Copy constructor.
+// Copy constructor.
 TSupport::TSupport(const TSupport& S) {
     fConditions[0] = S.fConditions[0];
     fConditions[1] = S.fConditions[1];
@@ -25,6 +25,18 @@ TSupport::TSupport(const TSupport& S) {
 
 // Destructor.
 TSupport::~TSupport() { }
+
+// Assignment operator.
+TSupport& TSupport::operator= (const TSupport& S) {
+	if (this != &S) {
+		fConditions[0] = S.fConditions[0];
+		fConditions[1] = S.fConditions[1];
+		fConditions[2] = S.fConditions[2];
+		fNodeID = S.fNodeID;
+		fStructure = S.fStructure;
+	}
+	return *this;
+}
 
 // getFx - accesses the Fx DOF of the support.
 bool TSupport::getFx() const {
@@ -62,18 +74,6 @@ void TSupport::setM(const bool M) {
 // setNode - modifies the node of the support.
 void TSupport::setNodeID(const int NodeID) {
     fNodeID = NodeID;
-}
-
-// Assignment operator.
-TSupport& TSupport::operator= (const TSupport& S) {
-    if (this != &S) {
-        fConditions[0] = S.fConditions[0];
-        fConditions[1] = S.fConditions[1];
-        fConditions[2] = S.fConditions[2];
-        fNodeID = S.fNodeID;
-        fStructure = S.fStructure;
-    }
-    return *this;
 }
 
 // Function that prints the support information.

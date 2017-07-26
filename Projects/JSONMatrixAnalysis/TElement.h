@@ -14,7 +14,9 @@
 #include "TMaterial.h"      // TMaterial class.
 #include "json.hpp"			// JSON compatibility.
 
+// Reference to TStructure class.
 class TStructure;
+
 // TElement class and declarations of its functions.
 class TElement {
     
@@ -22,10 +24,12 @@ public:
     // Default constructor.
     TElement(const int Node0ID = -1, const int Node1ID = -1, const bool Hinge0 = false,
              const bool Hinge1 = false, const int MaterialID = -1, TStructure* Structure = nullptr);
-    //Copy constructor.
+    // Copy constructor.
     TElement(const TElement& E);
     // Destructor.
     ~TElement();
+	// Assignment operator.
+	TElement& operator= (const TElement& E);
     
 	// getNodes - accesses the nodes of the element.
 	int* const getLocalNodesIDs();
@@ -76,9 +80,8 @@ public:
     void setHinge0(bool Hinge0);
     // setHinge1 - modifies the element's hinge at Node 1.
     void setHinge1(bool Hinge1);
-    
-    // Assignment operator.
-    TElement& operator= (const TElement& E);
+    // setStructure - modifies the element's Structure.
+	void setStructure(TStructure* Structure);
     
     // Function that prints the element information.
     void print();
