@@ -4,9 +4,6 @@
  */
 
 #include "JSONIntegration.h"
-#include "TNodalLoad.h"
-#include "TDistributedLoad.h"
-#include "TElementLoad.h"
 
 // Displays a JSON script.
 void printJSON(const nlohmann::json& J) {

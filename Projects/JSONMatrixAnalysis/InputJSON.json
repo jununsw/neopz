@@ -1,21 +1,21 @@
 {
   "Nodes": [
-    [ 0.0, 240.0 ],
-    [ 240.0, 240.0 ],
-    [ 240.0, 0.0 ]
+    [ 0.0, 0.0 ],
+    [ 240.0, 180.0 ],
+    [ 480.0, 180.0 ]
   ],
 
   "Materials": [
     {
       "E": 29000,
-      "A": 10,
-      "I": 500
+      "A": 12,
+      "I": 600
     }
   ],
 
   "Supports": [
     {
-      "Conditions": [ false, true, false ],
+      "Conditions": [ true, true, true ],
       "Node": 0
     },
     {
@@ -37,12 +37,12 @@
     }
   ],
 
-  "Nodal Loads": [
+  "Distributed Loads": [
     {
-      "Node": 1,
-      "Fx": 5.0,
-      "Fy": 0,
-      "M": 0
+      "Element": 1,
+      "Node 0 Load": -0.25,
+      "Node 1 Load": -0.25,
+      "Load Plane": false
     }
   ]
 }

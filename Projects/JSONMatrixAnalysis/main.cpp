@@ -15,39 +15,33 @@ using json = nlohmann::json;
 
 int main()
 {
+	// Reads input JSON file and converts into the structure and the different loads objects.
 	ifstream input("InputJSON.json");
-	json j;
-	input >> j;
-    
-	TStructure st;
-	importStructure(j, st);
+	json J;
+	input >> J;
 
-    st.enumerateEquations();
-    st.getK().Print(cout);
-    st.getK11().Print(cout);
-	st.getK21().Print(cout);
-
-    cout << "NDOF: " << st.getNDOF() << endl;
-    cout << "CDOF: " << st.getCDOF() << endl;
-    cout << "UDOF: " << st.getUDOF() << endl;
-    st.getNodeEquations().Print(cout);
+	TStructure Structure;
+	importStructure(J, Structure);
 
 	vector<TNodalLoad> nLoads;
 	vector<TDistributedLoad> dLoads;
 	vector<TElementLoad> eLoads;
-	importLoads(j, nLoads, dLoads, eLoads);
+	importLoads(J, nLoads, dLoads, eLoads);
 
-	TPZFMatrix<double> Q = st.getQ();
+	// Enumerates the DOF and computes the Global Stiffness Matrix K.
+	Structure.enumerateEquations();
+	Structure.getK().Print(cout);
+
+	// Creates the global vector of forces and displacements and calculates known external loads QK, unknown unconstrained displacements DU and unknown support loads QU.
+	TPZFMatrix<double> Q = Structure.getQ();
+	TPZFMatrix<double> D = Structure.getD();
+	Structure.calculateQK(Q, nLoads, dLoads, eLoads);
 	Q.Print(cout);
-	st.calculateQK(Q, nLoads, dLoads, eLoads);
-	Q.Print(cout);
+	Structure.calculateDU(Q, D);
+	Structure.calculateQU(Q, D);
 
-	TPZFMatrix<double> D = st.getD();
+	// Displays results.
 	D.Print(cout);
-	st.calculateDU(Q, D);
-	D.Print(cout);
-
-	st.calculateQU(Q, D);
 	Q.Print(cout);
 
 	system("pause");

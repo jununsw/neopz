@@ -83,27 +83,27 @@ void TDistributedLoad::store(TPZFMatrix<double>& L) {
 	int fy1DOF = fStructure->getNodeEquations()(node1ID, 1);
 	int m1DOF = fStructure->getNodeEquations()(node1ID, 2);
 
-	if (fLoadPlane == true) 	{
+	if (fLoadPlane == true) { // If the load plane is the global plane.
 		double lx = fStructure->getElement(this->fElementID).getCos();
 		double length = (fStructure->getElement(this->fElementID).getL()) * lx;
 
-		L(0, fy0DOF) += (7 * fNode0Load*length / 20) + (3 * fNode1Load*length / 20);
-		L(0, m0DOF) += (fNode0Load*length*length / 30) + (fNode1Load*length*length / 20);
-		L(0, fy1DOF) += (3 * fNode0Load*length / 20) + (7 * fNode1Load*length / 20);
-		L(0, m1DOF) += -1 * (fNode0Load*length*length / 20) - 1 * (fNode1Load*length*length / 30);
+		L(fy0DOF, 0) += (7 * fNode0Load*length / 20) + (3 * fNode1Load*length / 20);
+		L(m0DOF, 0) += (fNode0Load*length*length / 30) + (fNode1Load*length*length / 20);
+		L(fy1DOF, 0) += (3 * fNode0Load*length / 20) + (7 * fNode1Load*length / 20);
+		L(m1DOF, 0) += -1 * (fNode0Load*length*length / 20) - 1 * (fNode1Load*length*length / 30);
 	}
 
-	else { 
+	else { // If the load plane is the element local plane.
 		double lx = fStructure->getElement(this->fElementID).getCos();
 		double ly = fStructure->getElement(this->fElementID).getSin();
 		double length = fStructure->getElement(this->fElementID).getL();
 
-		L(0, fx0DOF) += -1 * ly * (7 * fNode0Load*length / 20) + (3 * fNode1Load*length / 20);
-		L(0, fy0DOF) += lx*(7 * fNode0Load*length / 20) + (3 * fNode1Load*length / 20);
-		L(0, m0DOF) += (fNode0Load*length*length / 30) + (fNode1Load*length*length / 20);
-		L(0, fx1DOF) += -1 * ly*(3 * fNode0Load*length / 20) + (7 * fNode1Load*length / 20);
-		L(0, fy1DOF) += lx*(3 * fNode0Load*length / 20) + (7 * fNode1Load*length / 20);
-		L(0, m1DOF) += -1 * (fNode0Load*length*length / 20) - 1 * (fNode1Load*length*length / 30);
+		L(fx0DOF, 0) += -1 * ly * ((7 * fNode0Load*length / 20) + (3 * fNode1Load*length / 20));
+		L(fy0DOF, 0) += lx*((7 * fNode0Load*length / 20) + (3 * fNode1Load*length / 20));
+		L(m0DOF, 0) += (fNode0Load*length*length / 30) + (fNode1Load*length*length / 20);
+		L(fx1DOF, 0) += -1 * ly*((3 * fNode0Load*length / 20) + (7 * fNode1Load*length / 20));
+		L(fy1DOF, 0) += lx * ((3 * fNode0Load*length / 20) + (7 * fNode1Load*length / 20));
+		L(m1DOF, 0) += -1 * ((fNode0Load*length*length / 20) + (fNode1Load*length*length / 30));
 	}
 }
 
@@ -114,4 +114,4 @@ void TDistributedLoad::print() {
     << " Node 0 Load: " << fNode0Load << std::endl
     << " Node 1 Load: " << fNode1Load << std::endl;
     std::cout << std::flush;
- }
+}
