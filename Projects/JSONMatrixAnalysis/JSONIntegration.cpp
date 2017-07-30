@@ -15,7 +15,7 @@ void printJSON(const nlohmann::json& J) {
 }
 
 // Reads the structure from the input JSON file.
-void readStructure(const nlohmann::json& J, TStructure& S) {
+void importStructure(const nlohmann::json& J, TStructure& S) {
 
 	// Reads the vector of TNode.
     std::vector<TNode> nodes;
@@ -54,25 +54,28 @@ void readStructure(const nlohmann::json& J, TStructure& S) {
 }
 
 // Reads the loads from the input JSON file.
-void readLoads(const nlohmann::json& J, std::vector<TNodalLoad>& nLoads, std::vector<TDistributedLoad>& dLoads, std::vector<TElementLoad>& eLoads) {
+void importLoads(const nlohmann::json& J, std::vector<TNodalLoad>& nLoads, std::vector<TDistributedLoad>& dLoads, std::vector<TElementLoad>& eLoads) {
 
-    nlohmann::json jNodalLoads = J["Nodal Loads"];
-    for (int i = 0; i < jNodalLoads.size(); i++) {
-		//TNodalLoad nodalLoad = J["Nodal Loads"][i];
-        nLoads.push_back(TNodalLoad(J["Nodal Loads"][i]));
-    }
-
-	/*nlohmann::json jDistributedLoads = J["Distributed Loads"];
-	for (int i = 0; i < jDistributedLoads.size(); i++) {
-		//TDistributedLoad distributedLoad = J["Distributed Loads"][i];
-		loads.push_back(new TDistributedLoad(J["Distributed Loads"][i]));
+	if (J.find("Nodal Loads") != J.end()) {
+		nlohmann::json jNodalLoads = J["Nodal Loads"];
+		for (int i = 0; i < jNodalLoads.size(); i++) {
+			nLoads.push_back(TNodalLoad(J["Nodal Loads"][i]));
+		}
 	}
 
-	nlohmann::json jElementLoads = J["Element Loads"];
-	for (int i = 0; i < jElementLoads.size(); i++) {
-		//TElementLoad elementLoad = J["Element Loads"][i];
-		loads.push_back(new TElementLoad(J["Element Loads"][i]));
-	}*/
+	if (J.find("Distributed Loads") != J.end()) {
+		nlohmann::json jDistributedLoads = J["Distributed Loads"];
+		for (int i = 0; i < jDistributedLoads.size(); i++) {
+			dLoads.push_back(TDistributedLoad(J["Distributed Loads"][i]));
+		}
+	}
+
+	if (J.find("Element Loads") != J.end()) {
+		nlohmann::json jElementLoads = J["Element Loads"];
+		for (int i = 0; i < jElementLoads.size(); i++) {
+			eLoads.push_back(TElementLoad(J["Element Loads"][i]));
+		}
+	}
 }
 
 // TMaterial.

@@ -6,8 +6,7 @@
 #define JSONINTEGRATION_H
 
 #include "pzfmatrix.h"		// PZ Matrix operations.
-#include "json.hpp"			// JSON compatibility.
-
+#include "json.hpp"			// JSON compatibility
 #include "TStructure.h"			// TStructure class.
 #include "TNode.h"				// TNode class.
 #include "TMaterial.h"			// TMaterial class.
@@ -21,9 +20,9 @@
 void printJSON(const nlohmann::json& J);
 
 // Converts JSON into a TStructure object.
-void readStructure(const nlohmann::json& J, TStructure& S);
+void importStructure(const nlohmann::json& J, TStructure& S);
 // Converts JSON into a load vector.
-void readLoads(const nlohmann::json& J, std::vector<TNodalLoad>& nLoads, std::vector<TDistributedLoad>& dLoads, std::vector<TElementLoad>& eLoads);
+void importLoads(const nlohmann::json& J, std::vector<TNodalLoad>& nLoads, std::vector<TDistributedLoad>& dLoads, std::vector<TElementLoad>& eLoads);
 
 // TMaterial.
 void to_json(nlohmann::json& J, const TMaterial& M);
@@ -46,4 +45,5 @@ void from_json(const nlohmann::json& J, TDistributedLoad& DL);
 // TElementLoad.
 void to_json(nlohmann::json& J, const TElementLoad& EL);
 void from_json(const nlohmann::json& J, TElementLoad& EL);
+
 #endif

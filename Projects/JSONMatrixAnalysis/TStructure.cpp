@@ -44,13 +44,13 @@ TElement TStructure::getElement(int elementID) const {
 TPZFMatrix<int> TStructure::getNodeEquations() const {
     return fNodeEquations;
 }
+
 // getSupport - returns a support ID by giving the reference node ID.
 int TStructure::getSupportID(int NodeID) {
     int SupportID = -1;
     
     for (int i = 0; i < fSupports.size(); i++) {
-        if (fSupports[i].getNodeID() == NodeID)
-        {
+        if (fSupports[i].getNodeID() == NodeID) {
             SupportID = i;
             break;
         }
@@ -123,8 +123,8 @@ int TStructure::getUDOF() const {
     return (this->getNDOF() - this->getCDOF());
 }
 
-// setEquations - enumerates the DOF associated with each element.
-void TStructure::setEquations() {
+// enumerateEquations - enumerates the DOF associated with each element.
+void TStructure::enumerateEquations() {
 
     TPZFMatrix<int> equations(fNodes.size(), 3, -1); // Matrix that stores the equations associated with each node.
     int CDOF = this->getCDOF();
@@ -203,8 +203,7 @@ TPZFMatrix<double> TStructure::getK() const {
     int NDOF = this->getNDOF();
     TPZFMatrix<double> K(NDOF, NDOF, 0);
     
-    for (int i = 0; i < fElements.size(); i++)
-    {
+    for (int i = 0; i < fElements.size(); i++) {
         TElement elem = fElements[i];
         TPZFMatrix<double> kLocal = elem.getK();
         
@@ -267,44 +266,74 @@ void TStructure::setElements(const std::vector<TElement>& Elements) {
 	fElements = Elements;
 }
 
-// getLoads - returns the vector of loads.
-void TStructure::getLoads(TPZFMatrix<double>& loads, std::vector<TNodalLoad>& nLoads,
+// getQ - returns the vector of loads with null elements.
+TPZFMatrix<double> TStructure::getQ() {
+	return TPZFMatrix<double>(this->getNDOF(), 1, 0);
+}
+
+// calculateQK - calculates the known external loads and stores them in the vector of global forces Q.
+void TStructure::calculateQK(TPZFMatrix<double>& Q, std::vector<TNodalLoad>& nLoads, 
 	std::vector<TDistributedLoad>& dLoads, std::vector<TElementLoad>& eLoads) {
 
 	for (int i = 0; i < nLoads.size(); i++) {
 		nLoads[i].setStructure(this);
-		nLoads[i].store(loads);
+		nLoads[i].store(Q);
 	}
 
 	for (int i = 0; i < dLoads.size(); i++) {
 		dLoads[i].setStructure(this);
-		dLoads[i].store(loads);
+		dLoads[i].store(Q);
 	}
 
 	for (int i = 0; i < eLoads.size(); i++) {
 		eLoads[i].setStructure(this);
-		eLoads[i].store(loads);
+		eLoads[i].store(Q);
 	}
 }
 
-// getDU - solves the unknown displacements.
-void TStructure::getDU(TPZFMatrix<double>& loads, TPZFMatrix<double>& DU) {
+// getD - returns the vector of displacements with null elements.
+TPZFMatrix<double> TStructure::getD() {
+	return TPZFMatrix<double>(this->getNDOF(), 1, 0);
+}
+
+// calculateDU - solves the unknown displacements DU and stores them in the vector of global displacements D.
+void TStructure::calculateDU(TPZFMatrix<double>& Q, TPZFMatrix<double>& D) {
 
 	int UDOF = this->getUDOF();
 	TPZFMatrix<double> knownLoads(UDOF, 1, 0);
 
 	for (int i = 0; i < UDOF; i++) {
-		knownLoads(i, 0) = loads(i, 0);
+		knownLoads(i, 0) = Q(i, 0);
 	}
 
 	TPZFMatrix<double> invK11;
 	this->getK11().Inverse(invK11, ELU);
+
+	TPZFMatrix<double> DU;
 	DU = invK11*knownLoads;
+
+	for (int i = 0; i < UDOF; i++) {
+		D(i, 0) = DU(i, 0);
+	}
 }
 
-// getSupportLoads - solves the support reactions.
-void TStructure::getSupportLoads(TPZFMatrix<double>& DU, TPZFMatrix<double>& SReactions) {
+// calculateQU - solves the support reactions and stores them in the vector of global forces Q.
+void TStructure::calculateQU(TPZFMatrix<double>& Q, TPZFMatrix<double>& D) {
+
+	int UDOF = this->getUDOF();
+	TPZFMatrix<double> DU(UDOF, 1, 0);
+
+	for (int i = 0; i < UDOF; i++) {
+		DU(i, 0) = D(i, 0);
+	}
+
 	int CDOF = this->getCDOF();
-	SReactions = this->getK21()*DU;
+	TPZFMatrix<double> QU(CDOF, 1, 0);
+
+	QU = this->getK21()*DU;
+
+	for (int i = 0; i < CDOF; i++) {
+		Q(UDOF + i, 0) = QU(i, 0);
+	}
 }
 

@@ -1,7 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <iostream>
-
 #include "TMaterial.h"
 #include "TNode.h"
 #include "TSupport.h"
@@ -21,35 +19,36 @@ int main()
 	json j;
 	input >> j;
     
-	TStructure structure;
-	readStructure(j, structure);
+	TStructure st;
+	importStructure(j, st);
 
-    structure.setEquations();
-    structure.getK().Print(cout);
-    structure.getK11().Print(cout);
-	structure.getK21().Print(cout);
+    st.enumerateEquations();
+    st.getK().Print(cout);
+    st.getK11().Print(cout);
+	st.getK21().Print(cout);
 
-    cout << "NDOF: " << structure.getNDOF() << endl;
-    cout << "CDOF: " << structure.getCDOF() << endl;
-    cout << "UDOF: " << structure.getUDOF() << endl;
-    structure.getNodeEquations().Print(cout);
+    cout << "NDOF: " << st.getNDOF() << endl;
+    cout << "CDOF: " << st.getCDOF() << endl;
+    cout << "UDOF: " << st.getUDOF() << endl;
+    st.getNodeEquations().Print(cout);
 
 	vector<TNodalLoad> nLoads;
 	vector<TDistributedLoad> dLoads;
 	vector<TElementLoad> eLoads;
-	readLoads(j, nLoads, dLoads, eLoads);
+	importLoads(j, nLoads, dLoads, eLoads);
 
-	TPZFMatrix<double> loads(structure.getNDOF(), 1, 0);
-	structure.getLoads(loads, nLoads, dLoads, eLoads);
-	loads.Print(cout);
+	TPZFMatrix<double> Q = st.getQ();
+	Q.Print(cout);
+	st.calculateQK(Q, nLoads, dLoads, eLoads);
+	Q.Print(cout);
 
-	TPZFMatrix<double> DU(structure.getUDOF(), 1, 0);
-	structure.getDU(loads, DU);
-	DU.Print(cout);
+	TPZFMatrix<double> D = st.getD();
+	D.Print(cout);
+	st.calculateDU(Q, D);
+	D.Print(cout);
 
-	TPZFMatrix<double> SupportReactions(structure.getCDOF(), 1, 0);
-	structure.getSupportLoads(DU, SupportReactions);
-	SupportReactions.Print(cout);
+	st.calculateQU(Q, D);
+	Q.Print(cout);
 
 	system("pause");
     return 0;

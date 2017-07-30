@@ -5,10 +5,7 @@ and the declaration of its members. */
 #ifndef TSTRUCTURE_H
 #define TSTRUCTURE_H
 
-#include <iostream>			// Basic input and output operations.
-#include <string>			// Operations with strings.
-#include "json.hpp"			// JSON compatibility.
-
+#include <iostream>
 #include "pzfmatrix.h"
 #include "TNode.h"
 #include "TMaterial.h"
@@ -38,29 +35,13 @@ public:
 	std::vector<TSupport> getSupports() const;
 	// getElements - returns the vector of elements.
 	std::vector<TElement> getElements() const;
-    // getElement - returns an element.
-    TElement getElement(int elementID) const;
-    // getNodeEquations - returns the matrix of DOFs of the nodes.
-    TPZFMatrix<int> getNodeEquations() const;
-    
-    //getSupport - returns a support ID by giving the reference node ID.
-    int getSupportID(int NodeID);
-    // getNDOF - returns the number of degrees of freedom of the structure.
-    int getNDOF() const;
-    // getCDOF - returns the number of constrained degrees of freedom of the structure.
-    int getCDOF() const;
-    // getUDOF - returns the number of unconstrained degrees of freedom of the structure.
-    int getUDOF() const;
-    // setEquations - enumerates the DOF associated with each element.
-    void setEquations();
+	// getElement - returns an element.
+	TElement getElement(int elementID) const;
+	// getSupport - returns a support ID by giving the reference node ID.
+	int getSupportID(int NodeID);
+	// getNodeEquations - returns the matrix of DOFs of the nodes.
+	TPZFMatrix<int> getNodeEquations() const;
 
-    // getK - returns the global stiffness matrix.
-    TPZFMatrix<double> getK() const;
-    // getK11 - returns the left upper block of the global stiffness matrix K.
-    TPZFMatrix<double> getK11() const;
-	// getK21 - returns the left down block of the global stiffness matrix K.
-	TPZFMatrix<double> getK21() const;
-    
 	// setNodes - modifies the vector of nodes.
 	void setNodes(const std::vector<TNode>& Nodes);
 	// setMaterials - modifies the vector of materials.
@@ -69,15 +50,33 @@ public:
 	void setSupports(const std::vector<TSupport>& Supports);
 	// setElements - modifies the vector of elements.
 	void setElements(const std::vector<TElement>& Elements);
+    
+    // getNDOF - returns the number of degrees of freedom of the structure.
+    int getNDOF() const;
+    // getCDOF - returns the number of constrained degrees of freedom of the structure.
+    int getCDOF() const;
+    // getUDOF - returns the number of unconstrained degrees of freedom of the structure.
+    int getUDOF() const;
+    // enumerateEquations - enumerates the DOF associated with each element.
+    void enumerateEquations();
 
+    // getK - returns the global stiffness matrix.
+    TPZFMatrix<double> getK() const;
+    // getK11 - returns the left upper block of the global stiffness matrix K.
+    TPZFMatrix<double> getK11() const;
+	// getK21 - returns the left down block of the global stiffness matrix K.
+	TPZFMatrix<double> getK21() const;
 
-	// getLoads - returns the vector of loads.
-	void getLoads(TPZFMatrix<double>& loads, std::vector<TNodalLoad>& nLoads, 
-		std::vector<TDistributedLoad>& dLoads, std::vector<TElementLoad>& eLoads);
-	// getDU - solves the unknown displacements.
-	void getDU(TPZFMatrix<double>& loads, TPZFMatrix<double>& DU);
-	// getSupportLoads - solves the support reactions.
-	void getSupportLoads(TPZFMatrix<double>& DU, TPZFMatrix<double>& SReactions);
+	// getQ - returns the vector of loads with null elements.
+	TPZFMatrix<double> getQ();
+	// calculateQK - calculates the known external loads and stores them in the vector of global forces Q.
+	void calculateQK(TPZFMatrix<double>& Q, std::vector<TNodalLoad>& nLoads, std::vector<TDistributedLoad>& dLoads, std::vector<TElementLoad>& eLoads);
+	// getD - returns the vector of displacements with null elements.
+	TPZFMatrix<double> getD();
+	// calculateDU - solves the unknown displacements DU and stores them in the vector of global displacements D.
+	void calculateDU(TPZFMatrix<double>& Q, TPZFMatrix<double>& D);
+	// calculateQU - solves the support reactions and stores them in the vector of global forces Q.
+	void calculateQU(TPZFMatrix<double>& Q, TPZFMatrix<double>& D);
 
 private:
     // fNodes - vector containing the structure nodes.
