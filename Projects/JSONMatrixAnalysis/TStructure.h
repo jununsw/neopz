@@ -17,11 +17,12 @@ and the declaration of its members. */
 
 // TStructure class and declarations of its functions.
 class TStructure {
-
 public:
 	// Default constructor.
-	TStructure(const std::vector<TNode>& Nodes = {}, const std::vector<TMaterial>& Materials = {},
-               const std::vector<TSupport>& Supports = {}, const std::vector<TElement>& Elements = {});
+	TStructure(const std::vector<TNode>& Nodes = {},
+			   const std::vector<TMaterial>& Materials = {},
+			   const std::vector<TSupport>& Supports = {},
+		       const std::vector<TElement>& Elements = {});
 	// Copy constructor.
 	TStructure(const TStructure& S);
 	// Destructor.
@@ -50,45 +51,50 @@ public:
 	void setSupports(const std::vector<TSupport>& Supports);
 	// setElements - modifies the vector of elements.
 	void setElements(const std::vector<TElement>& Elements);
-    
-    // getNDOF - returns the number of degrees of freedom of the structure.
-    int getNDOF() const;
-    // getCDOF - returns the number of constrained degrees of freedom of the structure.
-    int getCDOF() const;
-    // getUDOF - returns the number of unconstrained degrees of freedom of the structure.
-    int getUDOF() const;
-    // enumerateEquations - enumerates the DOF associated with each element.
-    void enumerateEquations();
 
-    // getK - returns the global stiffness matrix.
-    TPZFMatrix<double> getK() const;
-    // getK11 - returns the left upper block of the global stiffness matrix K.
-    TPZFMatrix<double> getK11() const;
+	// getNDOF - returns the number of DOF of the structure.
+	int getNDOF() const;
+	// getCDOF - returns the number of constrained DOF of the structure.
+	int getCDOF() const;
+	// getUDOF - returns the number of unconstrained DOF of the structure.
+	int getUDOF() const;
+	// enumerateEquations - enumerates the DOF associated with each element.
+	void enumerateEquations();
+
+	// getK - returns the global stiffness matrix.
+	TPZFMatrix<double> getK() const;
+	// getK11 - returns the left upper block of the global stiffness matrix K.
+	TPZFMatrix<double> getK11() const;
 	// getK21 - returns the left down block of the global stiffness matrix K.
 	TPZFMatrix<double> getK21() const;
 
 	// getQ - returns the vector of loads with null elements.
 	TPZFMatrix<double> getQ();
-	// calculateQK - calculates the known external loads and stores them in the vector of global forces Q.
-	void calculateQK(TPZFMatrix<double>& Q, std::vector<TNodalLoad>& nLoads, std::vector<TDistributedLoad>& dLoads, std::vector<TElementLoad>& eLoads);
+	// calculateQK - calculates the known external loads and stores them in the
+	// vector of global forces Q.
+	void calculateQK(TPZFMatrix<double>& Q, std::vector<TNodalLoad>& nLoads,
+				     std::vector<TDistributedLoad>& dLoads,
+					 std::vector<TElementLoad>& eLoads);
 	// getD - returns the vector of displacements with null elements.
 	TPZFMatrix<double> getD();
-	// calculateDU - solves the unknown displacements DU and stores them in the vector of global displacements D.
+	// calculateDU - solves the unknown displacements DU and stores them in the
+	// vector of global displacements D.
 	void calculateDU(TPZFMatrix<double>& Q, TPZFMatrix<double>& D);
-	// calculateQU - solves the support reactions and stores them in the vector of global forces Q.
+	// calculateQU - solves the support reactions and stores them in the vector of
+	// global forces Q.
 	void calculateQU(TPZFMatrix<double>& Q, TPZFMatrix<double>& D);
 
 private:
-    // fNodes - vector containing the structure nodes.
+	// fNodes - vector containing the structure nodes.
 	std::vector<TNode> fNodes;
-    // fMaterials - vector containing the available materials.
+	// fMaterials - vector containing the available materials.
 	std::vector<TMaterial> fMaterials;
-    // fSupports - vector containing the structure supports.
+	// fSupports - vector containing the structure supports.
 	std::vector<TSupport> fSupports;
-    // fElements - vector containing the structure elements.
+	// fElements - vector containing the structure elements.
 	std::vector<TElement> fElements;
-    // fNodeEquations - matrix containing the DOFs of the nodes.
-    TPZFMatrix<int> fNodeEquations;
+	// fNodeEquations - matrix containing the DOFs of the nodes.
+	TPZFMatrix<int> fNodeEquations;
 };
 
 #endif

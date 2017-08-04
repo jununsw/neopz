@@ -1,28 +1,29 @@
 /* This file was created by Gustavo BATISTELA.
- It is a header file containing the definition of functions
- that integrate JSON with the structure classes. */
+It is a header file containing the definition of functions
+that integrate JSON with the structure classes. */
 
 #ifndef JSONINTEGRATION_H
 #define JSONINTEGRATION_H
 
-#include "pzfmatrix.h"		// PZ Matrix operations.
-#include "json.hpp"			// JSON compatibility
-#include "TStructure.h"			// TStructure class.
-#include "TNode.h"				// TNode class.
-#include "TMaterial.h"			// TMaterial class.
-#include "TSupport.h"			// TSupport class.
-#include "TElement.h"			// TElement class.
-#include "TNodalLoad.h"			// TNodalLoad class.
-#include "TDistributedLoad.h"	// TDistributedLoad class.
-#include "TElementLoad.h"		// TElementLoad class.
+#include "json.hpp"
+#include "TStructure.h"
+#include "TNode.h"
+#include "TMaterial.h"
+#include "TSupport.h"
+#include "TElement.h"
+#include "TNodalLoad.h"
+#include "TDistributedLoad.h"
+#include "TElementLoad.h"
 
-// Displays a JSON script. 
+// Displays a JSON script.
 void printJSON(const nlohmann::json& J);
 
 // Converts JSON into a TStructure object.
 void importStructure(const nlohmann::json& J, TStructure& S);
 // Converts JSON into a load vector.
-void importLoads(const nlohmann::json& J, std::vector<TNodalLoad>& nLoads, std::vector<TDistributedLoad>& dLoads, std::vector<TElementLoad>& eLoads);
+void importLoads(const nlohmann::json& J, std::vector<TNodalLoad>& nLoads,
+				 std::vector<TDistributedLoad>& dLoads,
+				 std::vector<TElementLoad>& eLoads);
 
 // TMaterial.
 void to_json(nlohmann::json& J, const TMaterial& M);
